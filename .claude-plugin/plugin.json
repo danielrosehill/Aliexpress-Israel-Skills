@@ -1,0 +1,12 @@
+{
+  "name": "aliexpress-israel-skills",
+  "version": "1.0.0",
+  "description": "AliExpress shopping skills for Israel-based buyers — Choice-first search in ILS via a local browser, free-shipping filter, Israeli-reviews filter, single-listing landed-cost parse, and a running cart-value VAT-threshold nudge ($75 de-minimis).",
+  "author": {
+    "name": "Daniel Rosehill",
+    "url": "https://github.com/danielrosehill"
+  },
+  "repository": "https://github.com/danielrosehill/Aliexpress-Israel-Skills",
+  "license": "MIT",
+  "keywords": ["aliexpress", "shopping", "israel", "ils", "choice", "vat", "customs", "playwright"]
+}
