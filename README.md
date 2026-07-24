@@ -7,7 +7,9 @@ The search / review skills drive AliExpress in a **local, visible browser** via 
 ## Skills
 
 - `search-aliexpress` — search from an IL buyer's view (ILS, Hebrew channel). Choice is the default filter; free-shipping / 4★ / ship-from (IL/CN/TR) compose on top. Returns a shortlist of product cards.
+- `search-by-synonyms` — for products that hide under many names: rotate keyword mutations (plain / trade / function / CN-marketplace / material terms) over `search-aliexpress`, dedupe by item id, and filter hard on the one defining spec (usually a dimension). Beats a single query for hard-to-name commodity items.
 - `free-shipping-only` — thin preset over `search-aliexpress` that forces the server-side free-shipping-to-IL filter and verifies it applied.
+- `hunt-pricing-anomaly` — on a multi-variant listing, find where price doesn't scale with volume/quantity: computes ₪-per-litre per size and reads bulk tiers, so a disproportionately-cheap large size or quantity break surfaces. Verifies the win **landed** in IL.
 - `il-reviews-show` — on a product page, filter reviews down to Israeli buyers only (stars, variant, photos, text, date).
 - `fetch-listing` — parse a single listing/URL into structured JSON with an Israel-aware landed cost (price + ship-to-IL fee + VAT band).
 - `cart-vat-nudge` — track a running cart total in USD and nudge as it nears/crosses Israel's **$75 VAT-free de-minimis** (where ~18% VAT starts applying to the whole order).
