@@ -8,6 +8,7 @@ The search / review skills drive AliExpress in a **local, visible browser** via 
 
 - `search-aliexpress` — search from an IL buyer's view (ILS, Hebrew channel). Choice is the default filter; free-shipping / 4★ / ship-from (IL/CN/TR) compose on top. Returns a shortlist of product cards.
 - `search-by-synonyms` — for products that hide under many names: rotate keyword mutations (plain / trade / function / CN-marketplace / material terms) over `search-aliexpress`, dedupe by item id, and filter hard on the one defining spec (usually a dimension). Beats a single query for hard-to-name commodity items.
+- `search-by-image` — reverse-image search: upload a product photo to AliExpress's own visual search (camera icon) via the browser and return IL-context cards. For items keyword search can't find (industrial parts/bins, odd shapes). The picture-side complement to `search-by-synonyms`. (The official AliExpress API doesn't expose consumer image search — the site's visual search, browser-driven, is the route.)
 - `free-shipping-only` — thin preset over `search-aliexpress` that forces the server-side free-shipping-to-IL filter and verifies it applied.
 - `hunt-pricing-anomaly` — on a multi-variant listing, find where price doesn't scale with volume/quantity: computes ₪-per-litre per size and reads bulk tiers, so a disproportionately-cheap large size or quantity break surfaces. Verifies the win **landed** in IL.
 - `il-reviews-show` — on a product page, filter reviews down to Israeli buyers only (stars, variant, photos, text, date).
