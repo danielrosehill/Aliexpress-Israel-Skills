@@ -21,7 +21,7 @@ The $75 boundary is a **cliff, not a ramp**. A $74 order lands at ~$74; a $76 or
 
 ## Inputs
 
-- `cart` (required) — a list of line items the user is considering. Each item:
+- `cart` (required) — a list of line items the user is considering. Either hand-assembled, or taken straight from `export-cart`'s `items[]` (see the mapping in that skill). Each item:
   - `title` (string)
   - `url` (optional — AliExpress item URL)
   - `unit_price` (number) with `currency` (`ILS` or `USD`; default `ILS` since the site is pinned to ILS)
@@ -74,7 +74,9 @@ Landed estimate:
 - **Verify the threshold at runtime.** $75 (VAT) and $500 (duty) are the long-standing figures, but Israel has floated changes; confirm before treating a number as authoritative.
 - **VAT rate** is ~18% since 2025 — pass `vat_rate` to override if it changes.
 - The de-minimis is on **goods value**, but assessed VAT is on **CIF** (goods + shipping + insurance). Keep the two separate in the output so the user isn't misled.
-- This skill does **not** read the live AliExpress cart DOM — it works off line items the user or `fetch-listing` / `search-aliexpress` hand it. (Reading the on-site cart could be a future enhancement.)
+- This skill does not read the cart itself — it works off line items handed to it. To act on the **real** cart rather than a hypothetical basket, run `export-cart` first and feed its `items[]` straight in (`unitPrice`→`unit_price`, `quantity`→`qty`, `productUrl`→`url`). Prices from `export-cart` are per-unit, so don't pre-multiply.
+- When the items came from `export-cart`, decide whether to assess **selected items only** (what checkout would actually charge) or the whole cart, and **say which you used**. Defaulting to selected-only matches the site's own subtotal.
+- `export-cart` reports `crossedPrice` alongside the live price. Assess the threshold on what the user will actually pay (`unitPrice`) — but if the cart is sitting just under $75 on promo pricing, flag that an expiring promo could push it over.
 - Splitting orders to stay under de-minimis is a legitimate consumer choice, but repeated same-day split parcels to one address can be consolidated by customs — flag this rather than promising it always works.
 
 ## Validation checklist

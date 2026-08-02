@@ -77,6 +77,7 @@ USD value is computed from the ILS price using the live frankfurter.app rate. Ov
 
 - **Search** — use `search-aliexpress`.
 - **Running cart total across multiple items** — use `cart-vat-nudge`.
+- **Reading what's already in the user's cart** — use `export-cart`.
 - **Order placement / tracking** — not supported.
 
 ## Validation checklist
