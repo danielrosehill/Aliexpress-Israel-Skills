@@ -1,12 +1,27 @@
 {
   "name": "aliexpress-israel-skills",
-  "version": "1.3.0",
-  "description": "AliExpress shopping skills for Israel-based buyers — Choice-first search in ILS via a local browser, keyword-mutation and reverse-image search for hard-to-name items, free-shipping filter, Israeli-reviews filter, single-listing landed-cost parse, pricing-anomaly (₪/litre + bulk-tier) hunting, live cart export to structured JSON, and a running cart-value VAT-threshold nudge ($75 de-minimis).",
+  "version": "1.4.0",
+  "description": "AliExpress shopping skills for an Israel-based buyer: ILS pricing and Israel channel, Choice-first search, IL-only review filtering, shipping-lane evaluation to Israel, plug/voltage compatibility checks, and the $75 customs de-minimis tracked across single listings and the live cart. Drives the user's own Chrome; headless is a fallback.",
   "author": {
     "name": "Daniel Rosehill",
     "url": "https://github.com/danielrosehill"
   },
   "repository": "https://github.com/danielrosehill/Aliexpress-Israel-Skills",
   "license": "MIT",
-  "keywords": ["aliexpress", "shopping", "israel", "ils", "choice", "vat", "customs", "playwright", "image-search", "cart", "export"]
+  "keywords": [
+    "aliexpress",
+    "shopping",
+    "israel",
+    "ils",
+    "choice",
+    "vat",
+    "customs",
+    "shipping",
+    "logistics",
+    "de-minimis",
+    "claude-in-chrome",
+    "image-search",
+    "cart",
+    "compatibility"
+  ]
 }

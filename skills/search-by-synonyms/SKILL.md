@@ -36,7 +36,8 @@ If you already have the exact product name and just want a shortlist, use
 4. **Filter on the defining spec** — the one attribute that separates the product
    you want from its look-alikes (usually a **dimension**, sometimes a material or
    capacity). Drop everything that fails it, even if it's cheaper.
-5. **Rank and hand off** the survivors to `fetch-listing` for landed cost.
+5. **Rank and hand off** the survivors to `ship-options-il` (lane and lead time) and
+   `fetch-listing` (landed cost).
 
 ## Naming axes to rotate
 
@@ -68,10 +69,10 @@ first** (30×20, 40×30), so the footprint filter is mandatory either way.
 
 ## Reverse-image as a complementary hop
 
-If the user has a photo of the exact item, an in-browser reverse-image / "find
-similar" search (see the `Aliexpress-Find-Similar` userscript / `Aliexpress-Shopper`
-plugin) can leap the naming problem entirely — then still apply the spec filter,
-because visual matches skew to the most-common (often smaller) variant.
+If the user has a photo of the exact item, use `search-by-image` — it drives
+AliExpress's own visual search and leaps the naming problem entirely. Then still
+apply the spec filter, because visual matches skew to the most-common (often
+smaller) variant.
 
 ## Output format
 
@@ -91,14 +92,16 @@ Shortlist (spec-passing, deduped, Choice-first):
 2. …
 
 Dropped-on-spec: <count>  (wrong size/material — list a couple if useful)
-Next: hand shortlist to `fetch-listing` for landed cost; consider `hunt-pricing-anomaly` on multi-size listings.
+Next: `ship-options-il` + `fetch-listing` on the shortlist; `hunt-pricing-anomaly` on multi-size listings.
 ```
 
 ## Composition
 
-- Built **on top of** `search-aliexpress` — inherits the locale handshake, Choice
-  default, and all filters. Pass `freeshipping` / `ship_from` straight through.
-- Feeds `fetch-listing` (landed cost) and `hunt-pricing-anomaly` (per-volume / bulk).
+- Built **on top of** `search-aliexpress` — inherits the Chrome-first route, the
+  locale handshake, the Choice default and all filters. Pass `freeshipping` /
+  `ship_from` straight through.
+- Feeds `ship-options-il` (lane), `fetch-listing` (landed cost) and
+  `hunt-pricing-anomaly` (per-volume / bulk).
 
 ## Validation checklist
 

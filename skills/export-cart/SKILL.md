@@ -35,15 +35,18 @@ Full protocol notes, including the signing algorithm and the Ultron response lay
 
 ## Two routes — prefer A
 
-### Route A — read page state (default)
+### Route A — read page state in the user's own Chrome (default)
 
-No signing, no cookie handling, no API call. Requires a loaded cart page in a browser you control.
+No signing, no cookie handling, no API call. Requires a loaded cart page in a signed-in browser.
 
-1. Open `https://www.aliexpress.com/p/shoppingcart/index.html` and let it fully render. The user must already be signed in.
-2. Evaluate `scripts/extract-cart.js` in that page (Playwright `page.evaluate`, or Claude-in-Chrome `javascript_tool`).
-3. It returns `{exportedAt, source, summary, items}`.
+**Chrome is not merely preferred here, it is the natural fit:** the cart only exists for a signed-in session, and the user's own profile already is one. A fresh automation profile has no session at all. See `$CLAUDE_PLUGIN_ROOT/reference/browser.md`.
 
-This is the route to use unless the user explicitly wants unattended polling.
+1. `tabs_context_mcp` first — the user may already have AliExpress open. Don't navigate a tab out from under them.
+2. Open `https://www.aliexpress.com/p/shoppingcart/index.html` and let it fully render. The user must already be signed in.
+3. Evaluate `scripts/extract-cart.js` in that page — `mcp__claude-in-chrome__javascript_tool`, or `browser_evaluate` under gateway Playwright.
+4. It returns `{exportedAt, source, summary, items}`.
+
+Use this route unless the user explicitly wants unattended polling.
 
 ### Route B — signed API client (unattended)
 
@@ -103,6 +106,7 @@ Prices are **per unit**, not line totals — `cart-vat-nudge` multiplies by `qty
 - **`unitPrice` is the current promo price**, `crossedPrice` the struck-through "was". AliExpress promo prices expire; a cart exported last week may not check out at the same total.
 - **Quantities have a per-seller ceiling** (`maxQuantity`). Suggesting "buy 2 to hit free shipping" fails if `maxQuantity` is 1.
 - **Choice items ship consolidated.** For `cart-vat-nudge`'s split-order suggestion this matters: items in one Choice parcel are likely assessed together by customs, so splitting them across orders may not produce two separate consignments.
+- **`freeShipping` and `deliveryDays` are the cart's summary, not the menu.** They reflect whichever lane is currently selected, not the options available. To compare lanes on a line, run `ship-options-il` on its `productUrl`.
 - The cart reflects **ship-to country** from the account session. An account set to ship elsewhere returns different shipping and availability. Verify `shipToCountry` is `IL` before trusting the delivery estimates.
 - This is an **internal, unversioned API**. Field names have already changed several times. Match product nodes on the presence of `fields.itemView`, never on a component name.
 - Read-only by design. Adding, removing and re-quantifying items is deliberately **not** implemented — see Out of scope.

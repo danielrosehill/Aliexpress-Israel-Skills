@@ -30,6 +30,9 @@ The $75 boundary is a **cliff, not a ramp**. A $74 order lands at ~$74; a $76 or
 - `usd_ils` (optional) — override FX rate. Otherwise fetch live (frankfurter.app / ECB, 24h cache) as `fetch-listing` does.
 - `vat_rate` (optional, default `0.18`).
 
+Bands, the FOB/CIF distinction and the FX rule are shared —
+`$CLAUDE_PLUGIN_ROOT/reference/israel-tax.md`.
+
 ## Procedure
 
 1. **Get the FX rate.** Convert every ILS line to USD. If FX is unreachable and no `usd_ils` override is given, stop and say so — do not guess the rate.
@@ -74,7 +77,7 @@ Landed estimate:
 - **Verify the threshold at runtime.** $75 (VAT) and $500 (duty) are the long-standing figures, but Israel has floated changes; confirm before treating a number as authoritative.
 - **VAT rate** is ~18% since 2025 — pass `vat_rate` to override if it changes.
 - The de-minimis is on **goods value**, but assessed VAT is on **CIF** (goods + shipping + insurance). Keep the two separate in the output so the user isn't misled.
-- This skill does not read the cart itself — it works off line items handed to it. To act on the **real** cart rather than a hypothetical basket, run `export-cart` first and feed its `items[]` straight in (`unitPrice`→`unit_price`, `quantity`→`qty`, `productUrl`→`url`). Prices from `export-cart` are per-unit, so don't pre-multiply.
+- This skill does not read the cart itself — it works off line items handed to it. To act on the **real** cart rather than a hypothetical basket, run `export-cart` first (Chrome, signed-in session) and feed its `items[]` straight in (`unitPrice`→`unit_price`, `quantity`→`qty`, `productUrl`→`url`). Prices from `export-cart` are per-unit, so don't pre-multiply.
 - When the items came from `export-cart`, decide whether to assess **selected items only** (what checkout would actually charge) or the whole cart, and **say which you used**. Defaulting to selected-only matches the site's own subtotal.
 - `export-cart` reports `crossedPrice` alongside the live price. Assess the threshold on what the user will actually pay (`unitPrice`) — but if the cart is sitting just under $75 on promo pricing, flag that an expiring promo could push it over.
 - Splitting orders to stay under de-minimis is a legitimate consumer choice, but repeated same-day split parcels to one address can be consolidated by customs — flag this rather than promising it always works.

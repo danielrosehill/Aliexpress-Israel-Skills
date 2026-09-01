@@ -24,10 +24,13 @@ result cards.
 
 The **official AliExpress Open Platform API (affiliate / dropshipping) does not cleanly
 expose consumer reverse-image search.** AliExpress's *site* visual search is the
-reliable route, and this plugin already drives the site in a visible browser, so it's
-the natural home.
+reliable route, and this plugin already drives the site in the user's own browser, so
+it's the natural home.
 
-- **Primary (this skill):** browser-driven visual search on `he.aliexpress.com`.
+- **Primary (this skill):** visual search on `he.aliexpress.com`, driven in the
+  user's own Chrome (`mcp__claude-in-chrome__*`) — see
+  `$CLAUDE_PLUGIN_ROOT/reference/browser.md` for the route order. Gateway Playwright
+  is the unattended fallback.
 - **Fallback (no browser / batch):** third-party image-search APIs —
   Apify `freecamp008/search-by-image-aliexpress`, `omkarcloud/aliexpress-scraper` —
   take an image URL and return matches as JSON. They cost/limit per call and are
@@ -45,20 +48,22 @@ the natural home.
   *visually*-similar items across the whole size range, so filter on this.
 - `max_results` (optional, default 20).
 
-## Method (browser, local + visible)
+## Method (Chrome first)
 
-Follow `search-aliexpress` for the **locale handshake** (ILS + Hebrew cookies,
-visible browser, persistent profile) — do that first so results come back in ₪.
+Do the **locale handshake** first (`$CLAUDE_PLUGIN_ROOT/reference/browser.md`) so
+results come back in ₪. Load `mcp__claude-in-chrome__file_upload` in the same
+`ToolSearch` call as the rest of the browser tools — you will need it at step 2.
 
 1. **Open the entry point.** Navigate to `https://he.aliexpress.com/`. The visual
    search lives behind the **camera icon inside the main search bar**. Anchor on role
    / `aria-label` (icon class names rotate — never hard-code them); the control is an
    image-search / camera button adjacent to the search input. Clicking it reveals a
    drag-drop zone with a hidden `<input type="file">`.
-2. **Upload the image.** Use Playwright's file-upload (`browser_file_upload`) to hand
-   the local `image` path to that file input. If given a URL instead of a local path,
-   download it to a temp file first, then upload. On success the page navigates to the
-   image-search results (URL contains `image-search` / an uploaded-image token).
+2. **Upload the image.** Hand the local `image` path to that file input —
+   `mcp__claude-in-chrome__file_upload` in Chrome, `browser_file_upload` under
+   gateway Playwright. If given a URL instead of a local path, download it to a temp
+   file first, then upload. On success the page navigates to the image-search results
+   (URL contains `image-search` / an uploaded-image token).
 3. **Wait + read cards.** Wait for results to render, then read product cards with the
    same defensive query as `search-aliexpress`
    (`a[href*="/item/"]` → url / title / price / badges), de-duped by item id.
@@ -68,18 +73,20 @@ visible browser, persistent profile) — do that first so results come back in �
 5. **Hand off.** Shortlist → `fetch-listing` (landed cost) → `hunt-pricing-anomaly`
    (per-SKU / ₪-per-litre) on any multi-size listing.
 
-### Selector discovery (do once, record if it changes)
+### Selector discovery (do once, record it)
 
 The camera/image-search control and the file input are the only image-specific
-elements. Validate them on a live visible browser the first time (as with the other
-skills' selectors), preferring `aria-label` / role anchors. If the in-search-bar
-camera isn't present for the account, the image-search results page can also be
-reached directly and the file input targeted there.
+elements, and they are **not yet in `reference/selectors.md`**. Validate them live
+the first time, preferring `aria-label` / role anchors, then write what worked into
+that file with a date. If the in-search-bar camera isn't present for the account,
+the image-search results page can be reached directly and the file input targeted
+there.
 
 ## Output format
 
 ```
 Image: <path or url>   Defining spec: <e.g. No.3 pick bin ≈ 24×14.5×13 cm>
+Route: claude-in-chrome
 Visual-search results URL: <url>
 Locale verified: c_tp=ILS
 Result count: <N>   (passing defining spec: <K>)
@@ -88,7 +95,7 @@ Result count: <N>   (passing defining spec: <K>)
 2. …
 
 Dropped-on-spec: <count>
-Next: fetch-listing on the top picks; compare landed vs. local before buying.
+Next: `ship-options-il` on the top picks, then `fetch-listing` for landed cost.
 ```
 
 ## Composition

@@ -1,162 +1,99 @@
 ---
 name: search-aliexpress
-description: Search AliExpress as an Israel buyer — ILS pricing, Choice-first, with free-shipping / 4★ / ship-from filters, in a local browser.
+description: Search AliExpress as an Israel buyer — ILS pricing, Choice-first, with free-shipping / 4★ / ship-from filters, driven in the user's own Chrome.
 ---
 
 # Search AliExpress (Israel)
 
-Search AliExpress with the site pinned to the Israel channel, Hebrew locale, and ILS pricing, then optionally apply listing-page filters before returning the visible product cards.
+Search the site pinned to the Israel channel, Hebrew locale and ILS pricing, apply
+listing-page filters, and return the visible product cards.
 
-**Choice is the default focus.** Unless the user says otherwise, apply the Choice filter (`choice=true`) — Choice listings ship on AliExpress's own consolidated logistics to Israel (faster, more reliable, often free) and are the recommended default for IL buyers.
+**Choice is the default focus.** Unless the user says otherwise, apply the Choice
+filter (`choice=true`) — Choice listings ship on AliExpress's own consolidated
+logistics to Israel (faster, more reliable, often free) and are the recommended
+default for IL buyers.
 
 ## When to use
 
-User wants to find a product on AliExpress and cares about:
-
-- ILS prices (not USD)
-- Shipping availability to Israel
-- Choice listings (default), and/or filtering on free shipping / 4★+ / ship-from country
-- A first-pass shortlist they can hand off to `fetch-listing` for landed cost
+User wants to find a product on AliExpress and cares about ILS prices, shipping
+availability to Israel, Choice listings, or filtering on free shipping / 4★+ /
+ship-from country. Produces a first-pass shortlist to hand to `ship-options-il`
+(logistics) or `fetch-listing` (landed cost).
 
 ## Inputs
 
 - `query` (required) — free-text product query. Hebrew or English both fine.
-- `filters` (optional, any combo):
-  - `choice: true` — Choice / Brand+ products only. **Defaults to true**; pass `choice=false` to include non-Choice listings.
+- `filters` (optional, composable):
+  - `choice: true` — Choice / Brand+ only. **Defaults true**; pass `false` to include
+    non-Choice listings.
   - `freeshipping: true` — free shipping only
-  - `rating4plus: true` — 4★ & up only
+  - `rating4plus: true` — 4★ and up only
   - `premium: true` — Premium Quality badge only
-  - `ship_from: "IL" | "CN" | "TR" | "all"` — ship-from country (default: leave alone, i.e. "all")
-- `max_results` (optional, default 20) — how many product cards to return.
+  - `ship_from: "IL" | "CN" | "TR" | "all"` (default: leave alone)
+- `max_results` (optional, default 20)
 
-## Driving the browser (local)
+## Browser route and locale
 
-Drive AliExpress in a **local, visible browser** via Playwright (the `playwright` MCP tools). Do not run headless — AliExpress challenges headless contexts far more aggressively. Reuse the persistent profile if one is available so the locale cookies and any login stick between runs.
+**Drive the user's own Chrome first** (`mcp__claude-in-chrome__*`) — it is signed in,
+carries the locale cookies already, and is challenged far less than a fresh
+automation profile. Gateway Playwright is the fallback for unattended runs; headless
+is a last resort.
 
-## Locale & currency setup
-
-The site must render in **ILS + Hebrew** before scraping. Two cookies on `.aliexpress.com` control this (validated against live DOM):
-
-- `aep_usuc_f` — set subkeys `c_tp=ILS` and `b_locale=iw_IL`
-- `xman_us_f`  — set subkeys `x_locale=iw_IL` and `intl_locale=iw_IL`
-
-Both are `Secure`, `SameSite=None`, not HttpOnly, writable from JS. `region=IL` and `site=isr` should already be set on an IL account and should not be touched.
-
-If the cookies are not present (fresh browser context), navigate to `https://he.aliexpress.com/` once and let the site write them, then verify `c_tp=ILS` before continuing. If currency still shows `US $` on the results page, fall back to the on-page currency picker.
+Route order, tool mapping, the ILS/Hebrew/ship-to-IL handshake and its verification
+snippet are all in **`$CLAUDE_PLUGIN_ROOT/reference/browser.md`**. Do the handshake
+before reading any price. If the currency verification fails, **report it and stop** —
+never return USD prices silently as if they were ILS.
 
 ## Entry point
-
-Search results URL pattern:
 
 ```
 https://he.aliexpress.com/w/wholesale-<url-encoded-query>.html
 ```
 
-Use the `he.` subdomain (Hebrew). The site honours the cookies regardless, but the `he.` host is the canonical Israel-Hebrew entry.
+Use the `he.` subdomain — the site honours the cookie on any host, but `he.` is the
+canonical Israel-Hebrew entry point.
 
-## Filter application
+## Filters and card extraction
 
-All selectors below are validated against live DOM. Class names like `il_v`, `ip_iq`, `ie_a6` rotate per build — **never** anchor on those. Always use `aria-label`.
+Selectors live in **`$CLAUDE_PLUGIN_ROOT/reference/selectors.md`** — filter chips
+(`aria-label="filterCode:…"`, click the wrapper not the input, assert `aria-checked`),
+the ship-from radio group, and the defensive product-card query.
 
-### Filter-row checkboxes
+Two rules that cost time when ignored: **never anchor on hashed class names**, and
+**wait for the results to re-render after every toggle** before reading cards.
 
-Click the **wrapper `<span>`**, not the inner `<input>`. State is reflected on the wrapper via `aria-checked`.
-
-| Filter          | Selector                                   |
-|-----------------|--------------------------------------------|
-| Free shipping   | `[aria-label="filterCode:freeshipping"]`   |
-| Choice          | `[aria-label="filterCode:choice_atm"]`     |
-| 4★ & up         | `[aria-label="filterCode:4StarRating"]`    |
-| Premium Quality | `[aria-label="filterCode:PremiumQuality"]` |
-
-To toggle on:
-
-```js
-const el = document.querySelector('[aria-label="filterCode:choice_atm"]');
-if (el.getAttribute('aria-checked') !== 'true') el.click();
-```
-
-### Ship-from country (radio group)
-
-Single-select. Options on an IL account: `-1` (All) / `IL` / `TR` / `CN`.
-
-```js
-document.querySelector('[aria-label="IL"]').click();   // ship from Israel
-```
-
-Read current selection:
-
-```js
-document.querySelector('.il_v [aria-checked="true"]').getAttribute('aria-label');
-```
-
-(`.il_v` is hashed-prefix-stable enough to scope the read; if it rotates, fall back to scoping under the "Shipping from" header by text.)
-
-After toggling any filter, wait for results to re-render (network idle or a short fixed delay) before reading product cards.
-
-## Reading product cards
-
-Product cards on the results page do not have a single un-hashed anchor — class names rotate. Use a defensive query:
-
-```js
-[...document.querySelectorAll('a[href*="/item/"]')]
-  .map(a => ({
-    url: a.href,
-    title: a.querySelector('[class*="title"], h3, [title]')?.getAttribute('title')
-        || a.querySelector('[class*="title"], h3')?.textContent?.trim(),
-    priceText: a.querySelector('[class*="price"]')?.textContent?.trim(),
-  }))
-  .filter(c => c.url && c.title);
-```
-
-Extract:
-
-- `url` — absolute product URL (de-dup by item id; the same item can appear via multiple ad slots)
-- `title` — product title in Hebrew (since locale is `iw_IL`)
-- `priceText` — raw price string, expected to start with `₪` since currency is ILS
-- `badges` — read `Choice` / `Max Combo` badges from the card if present (Max Combo is a per-card badge, not a server-side filter)
-
-Parse the price separately; do not assume a fixed format. Common patterns: `₪12.34`, `₪1,234.56`, range `₪10.00 - ₪25.00`.
+Extract per card: `url` (de-duped by item id — the same item appears in several ad
+slots), `title` (Hebrew, since `iw_IL`), `priceText` (expect `₪`), and any `Choice` /
+`Max Combo` badges. Parse prices defensively; ranges are common.
 
 ## Output format
 
-Return a structured block:
-
 ```
-Query: <query>
+Query: <query>              Route: claude-in-chrome
 Filters: choice=… freeshipping=… rating4plus=… premium=… ship_from=…
 Locale verified: c_tp=ILS, b_locale=iw_IL
 Results URL: <full URL>
 Result count: <N>
 
 1. <title>
-   ₪<price>   ship from: <country if visible on card>   badges: [Choice, Max Combo, …]
+   ₪<price>   ship from: <country if visible>   badges: [Choice, Max Combo, …]
    <url>
-
 2. …
 ```
 
-If currency verification fails (cookies didn't take), report that explicitly and stop — don't return USD prices silently.
+## Out of scope
 
-## Playwright notes
+- Shipping options / lead times per listing — that's `ship-options-il`.
+- Landed cost — that's `fetch-listing`.
+- The $75 threshold — `find-under-75` (hunting) or `cart-vat-nudge` (running total).
+- Local Israeli retailer comparison. Order placement or tracking.
 
-- Use a **visible** browser. AliExpress is aggressive about anti-bot heuristics and headless contexts get challenged more often.
-- Reuse a persistent browser profile if available — the cookies above stick to that profile and you avoid the locale handshake on every run.
-- Do **not** trigger any `alert` / `confirm` / `prompt` dialogs. If a cookie / consent / region modal appears on first visit, dismiss it via its own close button.
-- Wait for network idle after each filter toggle; AliExpress re-fetches the result set.
-- Hebrew RTL: prefer role/name and `aria-label`-anchored selectors over positional ones.
-
-## Out of scope (for this skill)
-
-- Does **not** compute landed cost (item + shipping + VAT/customs) — that's `fetch-listing`.
-- Does **not** track a running cart total — that's `cart-vat-nudge`.
-- Does **not** compare against local Israeli retailers.
-- Does **not** track orders or place orders.
-
-## Validation checklist (before declaring success)
+## Validation checklist
 
 1. Results URL contains `he.aliexpress.com/w/wholesale-`.
-2. `aep_usuc_f` cookie has `c_tp=ILS` and `b_locale=iw_IL`.
-3. At least one product price string starts with `₪` (or contains `ILS`).
-4. Each requested filter's wrapper has `aria-checked="true"` (including Choice by default).
-5. Ship-from selection (if requested) matches the requested ISO-2 code.
+2. Locale verified per `reference/browser.md` (ILS + `iw_IL`).
+3. At least one product price string starts with `₪`.
+4. Every requested filter's wrapper reads `aria-checked="true"` (including the Choice
+   default).
+5. Ship-from, if requested, matches the requested ISO-2 code.
+6. The browser route actually used is named in the output header.

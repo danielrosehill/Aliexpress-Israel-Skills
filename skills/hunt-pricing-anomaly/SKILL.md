@@ -30,11 +30,11 @@ proportionally more. This skill finds those anomalies on a listing.
 
 ## Method
 
-1. **Enumerate SKUs.** Open the listing (locale = ILS/Hebrew per `search-aliexpress`
-   cookie setup) and read every size/variant option with its price. If the size grid
-   is JS-gated and won't scrape, drive it in the **visible browser** (Playwright),
-   clicking each dropdown option and reading the updated price — the price XHR is
-   anti-bot-protected for headless/fetch, so a real browser is required.
+1. **Enumerate SKUs.** Open the listing in the user's own Chrome and do the locale
+   handshake first (`$CLAUDE_PLUGIN_ROOT/reference/browser.md`), then read every
+   size/variant option with its price. The size grid is JS-gated and the price XHR is
+   anti-bot-protected, so click each option and read the updated price — plain fetch
+   and headless both fail here. Chrome first, gateway Playwright as fallback.
 2. **Normalize.** For each SKU, parse dimensions → **volume in litres**
    (`L×W×H in cm ÷ 1000`), and compute **₪/L**. For non-volume goods, normalize on
    the natural unit (per metre, per 100 pcs, etc.).
@@ -42,8 +42,11 @@ proportionally more. This skill finds those anomalies on a listing.
 4. **Flag anomalies.** Rank SKUs by ₪/L (or natural unit). Call out any where a
    larger size is within ~10% of a smaller one's price, and any qty tier that beats
    the 1-unit price by a meaningful margin.
-5. **Landed check.** Add ship-to-IL + VAT band via `fetch-listing` logic at the
-   winning size×qty — the anomaly only matters if it survives *landed* in Israel.
+5. **Landed check.** Add ship-to-IL + VAT band at the winning size×qty — the anomaly
+   only matters if it survives *landed* in Israel. **Shipping frequently does not
+   scale with the bulk tier**, and a heavier variant can lose its free-shipping flag
+   entirely, so re-read the lane at the winning SKU with `ship-options-il` rather
+   than reusing the single-unit figure.
 
 ## Output format
 
@@ -71,8 +74,12 @@ Beats local? local rigid 60×40 w/ lid ≈ ₪80 → compare per-box landed.
 ## Composition
 
 - Consumes a listing shortlisted by `search-by-synonyms` / `search-aliexpress`.
-- Uses `fetch-listing` for the landed-cost + VAT band at the chosen SKU.
-- Feed the running total to `cart-vat-nudge` if buying several.
+- Uses `ship-options-il` for the lane at the winning SKU and `fetch-listing` for the
+  landed cost + VAT band.
+- Feed the running total to `cart-vat-nudge` if buying several. **A bulk tier is the
+  most common way an otherwise-safe order crosses the $75 line** — a 10-unit tier at
+  $9/unit is $90 of goods and fully taxable. Check the tier total, not the unit price.
+- `find-under-75` if the goal is specifically to stay inside the exemption.
 
 ## Validation checklist
 
@@ -80,3 +87,6 @@ Beats local? local rigid 60×40 w/ lid ≈ ₪80 → compare per-box landed.
 2. ₪/L (or the natural per-unit metric) is computed for each — not just sticker price.
 3. Quantity tiers reported (including "none found").
 4. The winning pick is compared **landed in Israel**, not on sticker alone.
+5. Shipping was re-read at the winning SKU/qty, not carried over from 1 unit.
+6. If a quantity tier is recommended, its **total goods value** was checked against
+   the $75 de-minimis and the result stated.
