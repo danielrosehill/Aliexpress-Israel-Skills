@@ -59,6 +59,13 @@ Finding the thing in the first place: `search-aliexpress`, `search-by-synonyms`,
 - `export-cart` — read the live signed-in cart into JSON/CSV. Feeds `cart-vat-nudge`
   directly. Read-only by design.
 
+**Maintenance**
+
+- `selector-verification` — probe the live DOM against every selector in
+  `reference/selectors.md` and report what still works. Uses a fixed fixture query
+  (`USB-C cable`) so a change in the result means a change in the site. Admin skill;
+  not for shopping.
+
 ## Shared references
 
 Loaded on demand, so the cost is paid once rather than duplicated in every skill:
@@ -98,10 +105,13 @@ reverse-engineering write-up lives in the private `Aliexpress-Cart-Analysis` rep
   documents a `scripts/ali-fetch.mjs` that does not exist in this repo. Route A
   (Chrome) works; the skill says so explicitly rather than pointing you at a missing
   file.
-- **Delivery-panel and spec-table selectors are uncaptured** (`U` in
-  `reference/selectors.md`). `ship-options-il` and `check-il-compatibility` carry
-  text-anchored fallbacks and a capture procedure; run them once against the live
-  site and promote the results.
+- **Delivery-panel and spec-table selectors are still uncaptured** (`U` in
+  `reference/selectors.md`). The 2026-09-01 verification run covered the search page
+  only; the product page has not been probed. `ship-options-il` and
+  `check-il-compatibility` carry text-anchored fallbacks until it is.
+- **The `he.` host does not force ILS.** An account set to EN/USD gets English and
+  USD on `he.aliexpress.com`. Skills verify the rendered currency rather than trusting
+  the hostname — but the currency must currently be switched by hand or by the picker.
 - **No local-retailer price comparison.** Deliberate — "is this cheaper than buying
   it in Israel" lives in the separate `israel-shopping` collection alongside the Zap
   comparison skills.

@@ -13,19 +13,72 @@ anchors only, capture before trusting.
 
 ---
 
+## ⚠️ Read this before concluding any selector is broken
+
+**AliExpress search results hydrate in stages, over ~10 seconds.** A probe run too
+early sees a partially-built DOM and reports failures that are not real. Measured
+2026-09-01 on the same page, same session, no reload:
+
+| Read at | `a[href*="/item/"]` | `input[type=checkbox]` | `[aria-label^="filterCode:"]` |
+|---|---|---|---|
+| ~4 s (after scroll loop) | 4 | 0 | 0 |
+| fully settled | 13 | 4 | 4 |
+
+Every filter selector in this file "failed" on the early read and passed on the late
+one. **Nothing had rotated.** Gate on a sanity condition before trusting a negative:
+
+```js
+// wait until the grid stops growing, then probe
+const settled = async () => {
+  let prev = -1, n = 0;
+  for (let i = 0; i < 20; i++) {
+    n = document.querySelectorAll('a[href*="/item/"]').length;
+    if (n === prev && n >= 10) return n;
+    prev = n;
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  return n;
+};
+```
+
+If the count never reaches 10 on a broad query like `USB-C cable`, the page did not
+render — report **inconclusive**, not failure. `skills/selector-verification` bakes
+this in.
+
+## ⚠️ The `he.` subdomain does not set the locale
+
+Verified 2026-09-01: loading `https://he.aliexpress.com/w/...` while signed in gave
+`document.documentElement.lang === "en"` and a language switcher reading **`EN/USD`**,
+with every price rendered as `US $4.26`. The site knew it was the Israel storefront
+(switcher label: *"…shopping on AliExpress il"*) yet served English and USD.
+
+**The account/profile preference wins over the hostname.** The claim that visiting
+`he.aliexpress.com` writes the ILS cookies is false for an account already set to
+EN/USD. Skills must verify the rendered currency and either switch it explicitly via
+the on-page picker or report the mismatch — never assume `₪` because of the host.
+
 ## Search results page — filter chips  (V)
 
 Host: `https://he.aliexpress.com/w/wholesale-<url-encoded-query>.html`
 
-Click the wrapper `<span>`, **not** the inner `<input>`. State is reflected on the
-wrapper via `aria-checked`.
+**Confirmed 2026-09-01** (`USB-C cable`, EN/USD session, after full hydration).
+The chips render as a **left sidebar**, not a horizontal chip row. Each is a wrapper
+carrying the `aria-label`, containing an `<input type="checkbox">`. Click the
+**wrapper**, not the inner input.
 
-| Filter | Selector |
-|---|---|
-| Free shipping | `[aria-label="filterCode:freeshipping"]` |
-| Choice | `[aria-label="filterCode:choice_atm"]` |
-| 4★ & up | `[aria-label="filterCode:4StarRating"]` |
-| Premium Quality | `[aria-label="filterCode:PremiumQuality"]` |
+| Filter | Selector | Status |
+|---|---|---|
+| Free shipping | `[aria-label="filterCode:freeshipping"]` | V 2026-09-01 |
+| Choice | `[aria-label="filterCode:choice_atm"]` | V 2026-09-01 |
+| 4★ & up | `[aria-label="filterCode:4StarRating"]` | V 2026-09-01 |
+| Sale / big sale | `[aria-label="filterCode:bigsale"]` | V 2026-09-01 — undocumented until now |
+| Premium Quality | `[aria-label="filterCode:PremiumQuality"]` | **U** — absent on this fixture |
+
+`PremiumQuality` returned 0 on `USB-C cable` while the other four returned 1 each.
+That is consistent with the chip being category-dependent rather than rotated, but it
+is **not proven** — re-test on a category where Premium Quality is offered before
+treating its absence as normal. The inner input carries no `aria-label` and no
+`name`; the wrapper is the only stable handle.
 
 ```js
 const toggleChip = (code) => {
@@ -43,6 +96,9 @@ a clear error — do not report unfiltered results as filtered.
 ## Search results page — ship-from country  (V)
 
 Single-select radio group. Options on an IL account: `-1` (All) / `IL` / `TR` / `CN`.
+`[aria-label="IL"]` **confirmed present, 2026-09-01** (1 match). Note the sibling
+radios in the same sidebar use category ids as their `aria-label` (`10130-4358550`),
+so scope to the country group rather than assuming every radio is a country.
 
 ```js
 document.querySelector('[aria-label="IL"]').click();        // set
@@ -54,18 +110,40 @@ to scoping under the "Shipping from" / "נשלח מ" header by text.
 
 ## Search results page — product cards  (V)
 
-No stable un-hashed anchor. Query defensively off the item link:
+**`[class*="price"]` is broken — do not use it.** Measured 2026-09-01 on a fully
+hydrated page: **0 of 13** cards matched. The price is split across `<span>` leaves
+carrying *only* hashed classes (`lz_kw` holds the `US $` glyph, `lz_lp` the digits),
+with no `price` substring anywhere in the card. This is the one documented selector
+that genuinely rotated.
+
+**Working replacement — parse the card's `innerText`.** 13/13 on the same page, and
+currency-agnostic, so it survives an ILS session unchanged:
 
 ```js
 [...document.querySelectorAll('a[href*="/item/"]')]
-  .map(a => ({
-    url: a.href,
-    title: a.querySelector('[class*="title"], h3, [title]')?.getAttribute('title')
-        || a.querySelector('[class*="title"], h3')?.textContent?.trim(),
-    priceText: a.querySelector('[class*="price"]')?.textContent?.trim(),
-  }))
-  .filter(c => c.url && c.title);
+  .filter(a => (a.innerText || '').trim())
+  .map(a => {
+    const text = a.innerText;
+    const prices = text.match(/(?:US ?\$|₪)\s?[\d,]+\.?\d*/g) ?? [];
+    return {
+      id: a.href.match(/item\/(\d+)/)?.[1],
+      url: a.href.split('?')[0],
+      title: text.split('\n').find(l => l.length > 15) ?? null,
+      priceText: prices[0] ?? null,        // live price
+      crossedText: prices[1] ?? null,      // struck-through "was", when present
+    };
+  })
+  .filter(c => c.id && c.title);
 ```
+
+A card's `innerText` reads, in order: title, live price, crossed price, discount %,
+rating, sold count. **The first currency match is the payable price** — do not sort
+the matches numerically, the crossed price is higher and would win.
+
+`[aria-label^="US $"]` also matched 13/13 and is a viable alternate, but it hard-codes
+the currency and would need a second pattern under ILS. Prefer the `innerText` parse.
+
+Title via `[class*="title"], h3, [title]` **still works** — 13/13, V 2026-09-01.
 
 De-dupe by item id (`/item/(\d+)\.html`) — the same listing appears in multiple ad
 slots. Price strings vary: `₪12.34`, `₪1,234.56`, ranges `₪10.00 - ₪25.00`. Parse
@@ -155,3 +233,12 @@ JS-gated: the price and the shipping panel both update on selection, so read the
 
 The cart is **not** in the DOM at all — it arrives by JSONP script injection and is
 read out of page state. See `skills/export-cart/reference.md`; no selectors apply.
+
+
+---
+
+## Verification log
+
+| Date | Fixture | Session | Result |
+|---|---|---|---|
+| 2026-09-01 | `USB-C cable` search, `he.aliexpress.com` | EN/USD, signed in, Chrome | 5 confirmed V · 1 genuine break (card price → replaced with innerText parse) · 1 inconclusive (`PremiumQuality`) · locale premise disproved · staged-hydration gate added. Product page (delivery panel, spec table, review chips) **not yet probed** — still `U`. |

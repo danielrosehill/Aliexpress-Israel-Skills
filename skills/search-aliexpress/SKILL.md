@@ -62,9 +62,16 @@ the ship-from radio group, and the defensive product-card query.
 Two rules that cost time when ignored: **never anchor on hashed class names**, and
 **wait for the results to re-render after every toggle** before reading cards.
 
-Extract per card: `url` (de-duped by item id — the same item appears in several ad
-slots), `title` (Hebrew, since `iw_IL`), `priceText` (expect `₪`), and any `Choice` /
-`Max Combo` badges. Parse prices defensively; ranges are common.
+Extract per card by **parsing the card's `innerText`**, not by class — the price sits
+in hashed-class spans and `[class*="price"]` matches nothing (verified broken
+2026-09-01; the working parse is in `reference/selectors.md`). Take `url` (de-duped by
+item id — the same item appears in several ad slots), `title`, `priceText` (the
+**first** currency match; the second is the crossed-out "was"), and any `Choice` /
+`Max Combo` badges.
+
+**Wait for the grid to settle before reading.** Results hydrate in stages over ~10s;
+an early read returns a fraction of the cards and none of the filter chips. Poll
+until the card count stops rising.
 
 ## Output format
 
@@ -91,8 +98,11 @@ Result count: <N>
 ## Validation checklist
 
 1. Results URL contains `he.aliexpress.com/w/wholesale-`.
-2. Locale verified per `reference/browser.md` (ILS + `iw_IL`).
-3. At least one product price string starts with `₪`.
+2. Locale verified per `reference/browser.md`. **Do not assume the `he.` host gave you
+   ILS** — an account set to EN/USD renders `US $` on `he.aliexpress.com` (verified
+   2026-09-01). Switch via the on-page picker or report the mismatch.
+3. At least one product price string starts with `₪` — or the currency mismatch was
+   reported explicitly.
 4. Every requested filter's wrapper reads `aria-checked="true"` (including the Choice
    default).
 5. Ship-from, if requested, matches the requested ISO-2 code.

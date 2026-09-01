@@ -62,9 +62,13 @@ The site state lives in the `aep_usuc_f` cookie on `.aliexpress.com`:
 c_tp=ILS   b_locale=iw_IL   x_locale=iw_IL   intl_locale=iw_IL   region=IL
 ```
 
-It is `SameSite=None`, HttpOnly — **not readable or writable from JS**. To establish
-it, navigate once to `https://he.aliexpress.com/` and let the site write it, then
-verify. In Chrome the user's profile normally already carries it.
+It is `SameSite=None`, HttpOnly — **not readable or writable from JS**.
+
+**⚠️ Navigating to `he.aliexpress.com` does not establish it.** Verified 2026-09-01:
+a signed-in profile set to EN/USD served `lang="en"` and `US $` prices on the `he.`
+host, with the switcher reading `EN/USD`. The account preference beats the hostname.
+Use the on-page country/currency picker to change it, and **always verify what
+actually rendered** rather than assuming the host did the work.
 
 Verification without cookie access — read what the page actually rendered:
 
@@ -76,9 +80,11 @@ Verification without cookie access — read what the page actually rendered:
 })
 ```
 
-If the glyph is `US $` rather than `₪`, the handshake did not take. Fall back to the
-on-page currency/ship-to picker, re-verify, and **stop and report** if it still
-fails rather than converting silently.
+If the glyph is `US $` rather than `₪`, the handshake did not take — which is the
+**default outcome** on an EN/USD account, not an edge case. Use the on-page
+currency/ship-to picker, re-verify, and **stop and report** if it still fails rather
+than converting silently. The picker is reachable via
+`[aria-label*="country, region or language"]`.
 
 `he.` is the canonical Israel-Hebrew host. The site honours the cookie on any host,
 but use `he.aliexpress.com` so the entry point matches the session.
@@ -93,6 +99,10 @@ but use `he.aliexpress.com` so the entry point matches the session.
   substring. See `selectors.md`.
 - **Wait for re-render after any filter toggle** — AliExpress re-fetches the result
   set. Poll for the container to mutate rather than using a fixed sleep.
+- **Wait for initial hydration too.** Search results build in stages over ~10s. Read
+  too early and you get a fraction of the cards and *none* of the filter chips —
+  which looks exactly like rotated selectors. Poll until the card count stops rising.
+  See the gate in `selectors.md`.
 - **A captcha or risk challenge is a stop, not a retry loop.** Report it and hand
   back to the user; retrying from the same session makes it worse.
 - **Read-only.** No skill in this plugin adds to the cart, changes quantities, or
