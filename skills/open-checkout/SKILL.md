@@ -59,9 +59,13 @@ estimate and the committed figure, with the divergence explained.
    page you can no longer see what was excluded.
 2. **State the scope back to the user** if any line is unticked. "Checkout covers 3 of
    your 5 cart lines" is the most common surprise in this flow.
-3. Click the cart's **Checkout** CTA — located **by reference**, per
-   `reference/selectors.md`; its label carries the count (`Checkout (3)`), which
-   cross-checks `export-cart`'s selected count. On the single-item path, either click
+3. Click the cart's **Checkout** CTA with a DOM dispatch —
+   `document.querySelector('button.cart-summary-button').click()` (unhashed class, see
+   `reference/selectors.md`). Its label carries the count (`Checkout (3)`), which
+   cross-checks `export-cart`'s **line** count — not its unit count, since a quantity
+   change leaves that label unmoved. The click navigates, so read the confirm page in
+   a *separate* call: a long `await` spanning the navigation throws
+   `Inspected target navigated or closed`. On the single-item path, either click
    the listing's Buy now CTA after selecting the SKU, or **construct the confirm URL
    directly** from `objectId` + `skuId` + `quantity` (shape in
    `reference/selectors.md`) — the more durable route, since it needs no CTA-row
@@ -71,7 +75,18 @@ estimate and the committed figure, with the divergence explained.
    after the item rows. **Reading early yields a total that is missing tax and
    shipping** — and it looks like a plausible total, which is what makes it dangerous.
    Gate on the total no longer changing across two consecutive reads a second apart.
-5. **Read the page** — fields below.
+5. **Read the page.** Evaluate
+   `$CLAUDE_PLUGIN_ROOT/skills/open-checkout/scripts/read-confirm-page.js` in the page
+   (`javascript_tool`, or `browser_evaluate` under gateway Playwright). It returns the
+   fields below as JSON and parks it on `window.aeConfirm`. It **redacts at source** —
+   no street address, no customs ID, no payment instrument — so its output is safe to
+   paste into a transcript or a repo.
+
+   Check `settled` before quoting any figure, and read `warnings[]`: it flags a
+   credit-zeroed total, an unsettled page, and a fall back to body-text parsing (which
+   means the summary blocks were renamed and the selectors need re-verifying).
+
+   Parse the fields below by hand only if the script reports the fallback.
 6. **Reconcile** against `expected_total` and explain every difference.
 7. **Stop.** Do not click Place Order. Say explicitly that nothing was ordered.
 

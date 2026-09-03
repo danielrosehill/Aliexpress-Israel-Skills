@@ -13,11 +13,12 @@ reads. See the write-action ladder in
 `$CLAUDE_PLUGIN_ROOT/reference/browser.md` — this skill is tier 2 (reversible,
 no money moves).
 
-> ⚠️ **Unproven as of 2026-09-03.** Two live attempts, both clicking the correctly
-> located CTA by reference, left the cart empty with no error. Cause undiagnosed —
-> see the open defects in `docs/admin/development-notes.md`. The cart-diff
-> verification below is the only thing that stops that failure being reported as
-> success. Do not soften it, and do not report an add as done without it.
+> ✅ **Proven live 2026-09-04.** The 2026-09-03 failures were a coordinate-space bug
+> in `computer` `ref` clicks, not a selector fault — the click landed on a disclaimer
+> paragraph and fired zero requests. **Act with `element.click()`, never a `ref`
+> click**; see `CLAUDE.md` §1 and `reference/selectors.md` → "How to click on this
+> site". The cart-diff verification below still stands: it is what distinguishes a
+> real add from a silent no-op. Do not soften it.
 
 ## When to use
 
@@ -72,13 +73,18 @@ no money moves).
 5. **Set quantity.** Type into the qty input rather than clicking `+` n times, then
    read the value back. If the requested qty exceeds the ceiling the input clamps
    silently — report the clamp, do not report the request.
-6. **Locate the CTA by reference, never by position.** `find` ("Add to cart button")
-   or `read_page filter=interactive`, then act on the ref. The verified selector is
-   `button[class*="add-to-cart"]` — unhashed, exactly one match — see
-   `reference/selectors.md`. **The "Buy now" button sits ~42px away in the same row**,
-   and clicking it bypasses the cart and opens the order-confirmation page. A
-   position-based click that drifts by one button height starts an order; that has
-   already happened once here. See `CLAUDE.md` §1.
+6. **Act with a DOM dispatch, never a position and never a `ref` click.**
+
+   ```js
+   document.querySelector('button[class*="add-to-cart"]').click();
+   ```
+
+   The selector is unhashed and matches exactly one element — see
+   `reference/selectors.md`. **The "Buy now" button sits in the same row**, and
+   clicking it bypasses the cart and opens the order-confirmation page. Both a
+   position-based click and a `computer` `ref` click can land on the wrong element
+   here: the first started an order once, the second silently did nothing for a day.
+   See `CLAUDE.md` §1.
 7. Click once. **Do not click twice.** A slow response is not a failed click, and a
    second click adds a second unit.
 8. **Verify by cart diff** (below).

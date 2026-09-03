@@ -162,6 +162,14 @@ reverse-engineering write-up lives in the private `Aliexpress-Cart-Analysis` rep
 
 ## Known gaps
 
+> **Resolved 2026-09-04.** `add-to-cart` and the whole cart-mutation path now work.
+> The 2026-09-03 failure was never a selector problem: `computer` `ref` clicks resolve
+> through a screenshot coordinate space (1425×712) that does not match the page CSS
+> viewport (2133×1003), so they landed on unrelated text and fired zero requests.
+> Acting with `element.click()` fires 17 and the item lands. Add, quantity ±, per-line
+> delete, multi-line cart and checkout are all verified live — see the 2026-09-04 row
+> in [`reference/selectors.md`](reference/selectors.md).
+
 - **`fetch-listing` Route B is not implemented.** The headless-scraper route
   documents a `scripts/ali-fetch.mjs` that does not exist in this repo. Route A
   (Chrome) works; the skill says so explicitly rather than pointing you at a missing
@@ -173,14 +181,13 @@ reverse-engineering write-up lives in the private `Aliexpress-Cart-Analysis` rep
 - **The `he.` host does not force ILS.** An account set to EN/USD gets English and
   USD on `he.aliexpress.com`. Skills verify the rendered currency rather than trusting
   the hostname — but the currency must currently be switched by hand or by the picker.
-- **`add-to-cart` does not work yet.** Captured live 2026-09-03: two attempts,
-  clicking the correctly located CTA by reference, left the cart empty with no error.
-  Cause undiagnosed. Its cart-diff verification correctly refused to report success.
-- **Cart mutation beyond adding is uncaptured** — per-line remove, select-all, batch
-  delete and the quantity stepper on a cart line. All blocked on the same defect: the
-  cart could not be populated, so there was no line to act on.
+- **Seller-group and select-all checkboxes are located but never exercised.** All
+  three checkbox scopes share `aria-label="unselect product"`; only the per-line one
+  has been clicked. `div.cart-header-delete-btn` (batch delete) is likewise mapped but
+  undriven, and its confirmation modal may differ from the single-line one.
 - **`buy-now` has not been walked to completion.** The gate and terms sheet are
-  specified; the final `Pay now` click has never been made.
+  specified and the confirm page reads correctly; the final `Pay now` click has never
+  been made.
 - **No local-retailer price comparison.** Deliberate — "is this cheaper than buying
   it in Israel" lives in the separate `israel-shopping` collection alongside the Zap
   comparison skills.

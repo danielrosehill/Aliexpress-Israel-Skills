@@ -13,6 +13,70 @@ anchors only, capture before trusting.
 
 ---
 
+## ⚠️ How to click on this site  (V 2026-09-04)
+
+**`computer` clicks — including `ref` clicks — do not reliably reach handlers on this
+machine. Use a DOM-level dispatch instead.**
+
+Locate semantically, then dispatch on the element itself:
+
+```js
+// via mcp__claude-in-chrome__javascript_tool
+const b = document.querySelector('button[class*="add-to-cart"]');
+b.click();                       // fires React's handler; no coordinates involved
+```
+
+### What was measured, 2026-09-04
+
+The `add-to-cart` defect that stood open since 2026-09-03 — "click lands, cart stays
+empty" — is this, and it is not a selector problem at all.
+
+| Input method | Network requests fired |
+|---|---|
+| `computer left_click` with `ref` from `find` | **0** |
+| `element.click()` via `javascript_tool` | **17** |
+
+The cause is a coordinate-space mismatch. On this display:
+
+| Space | Size |
+|---|---|
+| page CSS viewport (`window.innerWidth/Height`) | **2133 × 1003** |
+| screenshot returned by `computer` | **1425 × 712** |
+
+`devicePixelRatio` is `0.9`, `outerWidth` is `1920`. Feeding the button's real page
+coordinates into the screenshot space, or vice versa, lands roughly 1.5× off:
+
+```js
+document.elementFromPoint(1676, 518);   // page space  -> SPAN "Add to cart"   ✅
+document.elementFromPoint(1231, 365);   // screenshot space -> P.seo-sellpoints--terms  ❌
+```
+
+So a `ref` click resolved through the screenshot space lands on a **disclaimer
+paragraph**. Nothing is thrown; the tool reports "Clicked on element ref_244" and the
+page does nothing. That is the whole defect.
+
+**Confirmed:** the request counts, the viewport figures, and the `elementFromPoint`
+results above. **Inferred:** that the `ref` → coordinate resolution is specifically
+where the scaling is lost — the tool's internals were not read.
+
+This supersedes the older advice that an element reference is a safe handle. A
+reference is a good way to *locate*; it is not a reliable way to *act*. The durable
+act is `element.click()` on a semantically-selected node, which is equally free of
+pixel dependence and actually reaches the handler.
+
+`aria-label` and unhashed-class selectors in this file remain correct — they are what
+you pass to `querySelector`.
+
+### Two mechanics that bite
+
+- **A click that navigates kills the evaluation.** `javascript_tool` throws
+  `Inspected target navigated or closed` if a long `await` sleep spans the navigation.
+  Click in one call, read in the next.
+- **`/item/*.html` on `www.` redirects to `he.aliexpress.com?gatewayAdapt=glo2isr`**,
+  and evaluating during the redirect fails with *"Permission denied for JavaScript
+  execution on this domain"*. That is a race, not a missing permission — re-issue once
+  the URL has settled.
+
 ## ⚠️ Read this before concluding any selector is broken
 
 **AliExpress search results hydrate in stages, over ~10 seconds.** A probe run too
@@ -274,25 +338,115 @@ twice and `Mix 2pcs` three times. A variant cannot be identified by label — re
 `skuId` or to the option's index within its axis, then confirm via
 `sku-item--selected--` **and** the rendered price.
 
-## Cart page — checkout CTA and empty state  (V 2026-09-03)
+## Cart page  (V 2026-09-04)
 
 Host: `https://www.aliexpress.com/p/shoppingcart/index.html`.
 
-| Thing | Selector / marker |
+**The cart page does not follow this file's `module--element--hash` rule.** Verified
+2026-09-04: a sweep for `prefix--element--` names over the whole populated cart page
+returned exactly one (`Categoey--lv1Item`, AliExpress's own typo). The cart is built
+from the Comet design system plus short per-build hashes (`_3mPKP`). So the anchors
+here are **unhashed semantic classes and `aria-label`**, not `[class*="prefix--"]`.
+Do not carry the product-page rule over to this page.
+
+### Structure
+
+`.cart-product` is one cart line. Inside it:
+
+| Part | Selector |
 |---|---|
-| checkout CTA label | text `Checkout (<n>)` — the count is in the label |
-| cart badge | `[class*="shop-cart--number--"]` (observed `shop-cart--number--axE62FE`) |
-| empty state | body text `Your cart is empty`, badge `0`, `Checkout (0)`, `Estimated total US $0.00` |
+| line container | `.cart-product` (also carries `activity_cart_product`) |
+| line body / checkbox scope | `.cart-product-body` |
+| info column | `.cart-product-info` |
+| quantity column | `.cart-product-block-action-wrapper` |
+| title | `[class*="cart-product-name"]` |
+| variant / SKU text | `[class*="cart-product-sku"]` |
+| seller group header | `.group-title-ctn` |
 
-The count inside the `Checkout (N)` label is a free cross-check against
-`export-cart`'s selected count — match on a substring, not the whole string. With
-nothing ticked the CTA is present but reads `(0)`.
+### Controls (all `aria-label`-anchored — the most durable handles on this page)
 
-**Per-line remove, select-all and batch-delete are still uncaptured** — the cart could
-not be populated during the 2026-09-03 run. See the open defects in
-`docs/admin/development-notes.md`.
+| Action | Selector | Note |
+|---|---|---|
+| quantity − | `[aria-label="decrease"]` | **a `DIV`, not a `button`** |
+| quantity value | `input[aria-label="number"]` (`.comet-v2-input-number-input`) | |
+| quantity + | `[aria-label="increase"]` | **a `DIV`, not a `button`** |
+| stepper wrapper | `.comet-v2-input-number` | |
+| delete one line | `[aria-label="delete product"]` (`.cart-product-name-ope-trashCan`) | opens a confirm modal |
+| add to wishlist | `[aria-label="add to wishlist"]` | |
+| find similar | `[aria-label="find similar"]` | |
+| checkout CTA | `button.cart-summary-button` | unhashed; label `Checkout (N)` |
+| delete selected | `div.cart-header-delete-btn` | **a `DIV`, not a `button`** — a button/role search misses it |
 
-## Order confirmation page  (V 2026-09-03)
+### Checkboxes — three scopes, one aria-label
+
+All three carry `aria-label="unselect product"` when ticked, so **the label cannot tell
+you the scope**. Scope by ancestor:
+
+| Scope | Ancestor |
+|---|---|
+| select all | `.cart-header-checkbox-wrap` |
+| seller group | `.group-title-ctn` |
+| one line | `.cart-product-body` |
+
+The input is `input.comet-v2-checkbox-input` inside `label.comet-v2-checkbox`; the
+checked state also shows as `comet-v2-checkbox-checked` on the label.
+
+### Remove confirmation modal  (V 2026-09-04)
+
+Clicking `[aria-label="delete product"]` opens: title `Remove product`, body
+`Remove item from cart?`, buttons `Remove` (primary) and `Cancel`.
+
+⚠️ **`[class*="comet-v2-modal"]` matches 7 nested elements for ONE modal** (mask, wrap,
+modal, close, content, body, footer). Counting matches will tell you there are seven
+dialogs open. Scope to `.comet-v2-modal-wrap`, and take the buttons from
+`.comet-v2-modal-footer`.
+
+### Counts and totals
+
+| Thing | Marker |
+|---|---|
+| line count | body text `Cart (N)` and `Checkout (N)` |
+| subtotal | body text `Subtotal US $X` |
+| estimated total | body text `Estimated total US $X` |
+| empty state | body text `Your cart is empty`, `Checkout (0)`, `Estimated total US $0.00` |
+
+⚠️ **`Cart (N)` / `Checkout (N)` count LINES, not units.** Verified 2026-09-04: taking
+one line from qty 1 → 2 moved the subtotal $1.44 → $2.88 and left both labels reading
+`(1)`. An earlier note in this file suggested `Checkout (N)` cross-checks a selected
+*item* count — it does not. Cross-check it against `export-cart`'s line count.
+
+⚠️ **The cart badge `[class*="shop-cart--number--"]` is unreliable.** Verified
+2026-09-04: it read `...` continuously for minutes after an add — on the product page
+*and* on the cart page itself, while the cart genuinely held the item. It is a
+loading placeholder that does not always resolve. **Never gate on the badge.** Read
+`Cart (N)` or diff `.cart-product` elements.
+
+Line order is **newest-first**: the most recently added item is `.cart-product[0]`.
+Identify a line by title or SKU, never by index.
+
+## Order confirmation page  (V 2026-09-04)
+
+### Two ways in, two URL shapes
+
+| Route | Query shape |
+|---|---|
+| Buy Now (single item) | `objectId=<itemId>&skuId=<skuId>&skuAttr=...&quantity=1&countryCode=IL&...&aeOrderFrom=main_detail` |
+| Cart checkout | `availableProductShopcartIds=<cartLineId>&aeOrderFrom=main_shopcart&spm=a2g0o.cart.0.0` |
+
+Verified 2026-09-04: clicking `button.cart-summary-button` produced
+`?availableProductShopcartIds=11004259953000&aeOrderFrom=main_shopcart`. The cart route
+identifies lines by **cart line id**, not by item/sku — so a confirm URL captured from
+one route cannot be rebuilt from the other route's identifiers.
+
+### Reader script
+
+`skills/open-checkout/scripts/read-confirm-page.js` parses this page into JSON and
+redacts at source (no street address, no customs ID, no payment instrument). Verified
+end to end 2026-09-04; it returned `summarySource: "pl-summary__item-pc (4) +
+pl-order-toal-container__item (1)"`, i.e. both blocks resolved. Prefer it to ad-hoc
+parsing.
+
+
 
 Host: `https://www.aliexpress.com/p/trade/confirm.html`.
 
@@ -336,5 +490,6 @@ read out of page state. See `skills/export-cart/reference.md`; no selectors appl
 
 | Date | Fixture | Session | Result |
 |---|---|---|---|
+| 2026-09-04 | items `1005012170805147`, `1005012995479364`; populated cart; cart-route confirm page | EN/USD, signed in, Chrome | **Root-caused the open `add-to-cart` defect**: not a selector fault but a coordinate-space mismatch (page 2133×1003 vs screenshot 1425×712) that makes `computer` `ref` clicks land on the wrong element — `ref` click 0 requests, `element.click()` 17. Cart populated for the first time, unblocking the whole cart map: quantity stepper (`aria-label` decrease/number/increase), per-line trash, remove-confirm modal, select-all/group/line checkbox scopes, `div.cart-header-delete-btn`. Corrected two premises: `Checkout (N)` counts lines not units, and the cart badge is an unreliable `...` placeholder. `read-confirm-page.js` validated live. |
 | 2026-09-01 | `USB-C cable` search, `he.aliexpress.com` | EN/USD, signed in, Chrome | 5 confirmed V · 1 genuine break (card price → replaced with innerText parse) · 1 inconclusive (`PremiumQuality`) · locale premise disproved · staged-hydration gate added. Product page (delivery panel, spec table, review chips) **not yet probed** — still `U`. |
 | 2026-09-03 | items `1005012170805147`, `1005012995479364`; cart page; confirm page | EN/USD, signed in, Chrome | Write paths captured live and promoted `U` → `V`: product CTA row (unhashed `add-to-cart` / `buy-now` prefixes), quantity stepper, variant grid incl. `sku-item--selected--`, cart empty state and `Checkout (N)`, confirm page incl. the `Pay now` label correction and the constructible confirm URL. Two premises corrected: the final button is not "Place order", and variant labels are not unique. **Still uncaptured:** per-line remove, select-all, batch delete — cart could not be populated (see open defects). |

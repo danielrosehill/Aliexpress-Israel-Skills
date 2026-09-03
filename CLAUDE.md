@@ -4,17 +4,27 @@ Skills here drive a live, signed-in AliExpress session against a real account wi
 real payment method. Two of them mutate state and one spends money, so the rules
 below are not style preferences.
 
-## 1. Element references, never coordinates
+## 1. Locate semantically; act with a DOM dispatch
 
 **Never click, type into, or otherwise target anything by pixel position.** No
 `click(1231, 392)`, no "the button below the price", no offset measured off a
 screenshot.
 
-Locate semantically, then act on the reference the browser tooling gives back:
+Locate semantically, then dispatch on the node itself:
 
-1. `find` ("Add to cart button") or `read_page filter=interactive` → element ref
-2. act on that ref (`computer` accepts `ref` instead of `coordinate`)
+1. `find` ("Add to cart button") or `read_page filter=interactive` to **locate**
+2. **act with `element.click()` via `javascript_tool`**, on a `querySelector` that uses
+   an `aria-label` or an unhashed class from `reference/selectors.md`
 3. assert the *effect*, not that the click was dispatched
+
+**Do not act via `computer` `ref` clicks on this site.** Amended 2026-09-04: a
+reference is a sound way to locate but not to act. `computer` resolves it through a
+screenshot coordinate space (1425×712) that does not match this page's CSS viewport
+(2133×1003), so the click lands ~1.5× off — on a disclaimer paragraph, in the measured
+case. Measured the same session: `ref` click → **0** network requests;
+`element.click()` → **17**, item in cart. This was the whole of the `add-to-cart`
+defect that stood open for a day. Full figures in `reference/selectors.md` → "How to
+click on this site".
 
 The governing write-up is
 `~/repos/github/ai-agents-and-prompts/ai-claude-plugins/Claude-Site-Skill-Builder-Plugin/references/durability-doctrine.md`

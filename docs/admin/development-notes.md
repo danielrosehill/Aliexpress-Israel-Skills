@@ -103,30 +103,79 @@ selection by reading back `sku-item--selected--` plus the price.
 ### The cart's empty state
 
 `Your cart is empty`, badge `0`, and the checkout CTA reads `Checkout (0)`. The count
-in that label is a free cross-check against `export-cart`'s selected count.
+in that label cross-checks `export-cart`'s **line** count — not its unit count; see the
+2026-09-04 correction below.
 
-## Open defects
+## Resolved: the `add-to-cart` defect  (2026-09-04)
 
-- **`add-to-cart` has never successfully added anything.** Two attempts on
-  2026-09-03, both clicking the correctly-located "Add to cart" element by reference,
-  left the cart empty — badge `0`, `Checkout (0)`, "Your cart is empty". The clicks
-  were dispatched and reported as landing. **Cause not diagnosed.** Candidates not yet
-  ruled out: the ref click not registering as a trusted gesture; a variant prompt or
-  risk check appearing and being missed; the add succeeding into a different cart
-  scope. Until this is understood, `add-to-cart` is unproven and its cart-diff
-  verification is the only thing standing between it and a false success report.
-  Diagnose before trusting it.
-- **Quantity stepper not yet exercised.** The `− 1 +` control was located on the
-  product page and on the confirm page (a `comet-v2-input-number-input` textbox
-  between two buttons), but increment/decrement has not been driven, and the cart-line
-  stepper has not been reached at all — the cart could not be populated. This is the
-  main gap for a `set-quantity` skill.
-- **Removal / empty-cart is unimplemented and uncaptured**, for the same reason: an
-  empty cart offers no line to remove. Capture the per-line remove control, the
-  select-all checkbox and any batch-delete confirmation modal on a populated cart
-  before writing the skill.
-- **`buy-now` has not been walked to completion.** The gate and terms sheet are
-  specified; the final click has never been made.
+**Status: root-caused and fixed.** This was the blocker behind every other gap below,
+and it was never a selector problem.
+
+**Symptom.** Clicking a correctly-located "Add to cart" element reference left the cart
+empty. The tool reported `Clicked on element ref_244`. No toast, no modal, no error.
+
+**What ruled out what.** Hooking `fetch` and `XMLHttpRequest` before the click showed
+**zero requests** leaving the page. That single measurement killed three of the four
+candidate causes at once: it was not a server-side rejection, not a risk check, and not
+an add into a different cart scope — the site's handler never ran.
+
+**Cause.** A coordinate-space mismatch. The page's CSS viewport is 2133 × 1003; the
+screenshot `computer` returns is 1425 × 712. A `ref` resolved through the screenshot
+space lands ~1.5× off — `document.elementFromPoint` at the screenshot-space position for
+the button returns `P.seo-sellpoints--terms`, a disclaimer paragraph. The click was
+real; it hit the wrong element, on a page region with no handler, and so did nothing
+observable.
+
+**Fix.** Dispatch on the node instead of at a position:
+
+```js
+document.querySelector('button[class*="add-to-cart"]').click();   // 17 requests, item lands
+```
+
+Full measurements in `reference/selectors.md` → "How to click on this site".
+
+**The doctrine consequence.** `CLAUDE.md` §1 said to use element references rather than
+coordinates. That is now known to be only half right: a reference is a sound way to
+**locate**, but acting through `computer(ref)` still crosses the broken coordinate
+space. Locate semantically, then act with `element.click()`. §1 has been amended.
+
+**Why the earlier run misread it.** The 2026-09-03 attempt checked the cart badge, which
+reads `...` indefinitely, and concluded "nothing happened" — correct by luck, for the
+wrong reason. The badge would have said the same thing on a successful add.
+
+## Cart write path — validated 2026-09-04
+
+With the cart populatable, everything previously blocked was exercised live on the
+fixtures:
+
+| Operation | Mechanism | Result |
+|---|---|---|
+| add to cart | `button[class*="add-to-cart"]` → `.click()` | line lands; `Cart (1)`, subtotal $1.44 |
+| increase qty | `[aria-label="increase"]` → `.click()` | qty 1→2, subtotal $1.44→$2.88, total $3.43→$4.87 |
+| decrease qty | `[aria-label="decrease"]` → `.click()` | qty 2→1, subtotal back to $1.44 |
+| multi-line cart | added SKU B alongside SKU A | 2 lines, subtotal $4.85, one `.group-title-ctn` |
+| delete one line | `[aria-label="delete product"]` → confirm modal → `Remove` | 2 lines → 1 |
+| checkout | `button.cart-summary-button` | navigates to cart-route confirm page |
+
+Totals are recalculated server-side on every quantity change, so a skill must re-read
+after acting rather than computing the new total locally.
+
+**Two premises corrected.** `Cart (N)` / `Checkout (N)` count **lines, not units** — a
+qty change leaves them unmoved, so they cannot cross-check a unit count. And the cart
+badge `[class*="shop-cart--number--"]` is a `...` placeholder that frequently never
+resolves; nothing should gate on it.
+
+**Cart line order is newest-first.** Identify a line by title or SKU, never by index.
+
+## Still open
+
+- **`buy-now` has not been walked to completion.** The gate and the terms sheet are
+  specified and the confirm page reads correctly, but no order has been placed.
+- **Seller-group and select-all checkboxes are located but not exercised.** All three
+  scopes share `aria-label="unselect product"`; only the per-line one has been clicked.
+- **`div.cart-header-delete-btn` (batch delete) is located but not exercised**, and its
+  confirmation modal — if it differs from the single-line one — is uncaptured.
+- **Delivery panel, spec table and variant grid on the product page remain `U`.**
 
 ## Things not to do again
 

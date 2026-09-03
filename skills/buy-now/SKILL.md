@@ -88,8 +88,16 @@ that is not authorization to spend. Ask.
 7. **Re-read the total one last time.** If it changed since Stage 1, the authorization
    is void: report the change and restart at Stage 1 with the new figures.
 8. Click the final CTA — **labelled `Pay now`, not "Place order"** (the page's own
-   fine print names a button it does not have; see `reference/selectors.md`). Locate
-   it **by reference**, never by position: the wrong control is one button away.
+   fine print names a button it does not have; see `reference/selectors.md`). Act with
+   a DOM dispatch, never by position and never via a `computer` `ref` click — both can
+   land on the wrong element, and the wrong control here is one button away:
+
+   ```js
+   const b = document.querySelector('button[class*="place-order-primary-btn"]')
+     || [...document.querySelectorAll('button')].find(x => /^Pay now$/i.test(x.innerText.trim()));
+   b.click();
+   ```
+
    **Click once.**
 9. Read the outcome and report it (below).
 
