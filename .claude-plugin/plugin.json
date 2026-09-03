@@ -1,6 +1,6 @@
 {
   "name": "aliexpress-israel-skills",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "AliExpress shopping skills for an Israel-based buyer: ILS pricing and Israel channel, Choice-first search, IL-only review filtering, shipping-lane evaluation to Israel, plug/voltage compatibility checks, and the $75 customs de-minimis tracked across single listings and the live cart. Exports the cart to JSON/CSV/Markdown, and — behind a graduated write ladder — adds to cart, reads the real checkout page, and places an order behind a confirmation gate. Drives the user's own Chrome; headless is a fallback.",
   "author": {
     "name": "Daniel Rosehill",

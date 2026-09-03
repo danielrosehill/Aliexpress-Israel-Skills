@@ -72,3 +72,29 @@ source date alongside any USD figure derived from an ILS price.
   the exposure.
 - Handling/clearance fees charged by the carrier are separate from tax and are not
   modelled by any skill here.
+
+
+## The computed de-minimis position  (added 2026-09-04)
+
+`skills/open-checkout/scripts/read-confirm-page.js` returns a `deMinimis` object so
+skills stop re-deriving this arithmetic. It carries **two** percentages on purpose:
+
+| Field | Meaning |
+|---|---|
+| `goodsPct` | `goods / 75` — **decides exemption.** Customs tests goods value ex-shipping |
+| `landedPct` | `(goods + shipping) / 75` — the operational ceiling `find-under-75` enforces |
+| `headroomUsd` | `75 - goods`; how much more can be added before VAT applies |
+| `band` | `GREEN` <80%, `AMBER` 80–99.9%, `RED` >=100% — banded on `goodsPct` |
+| `exempt` | `goods < 75` |
+| `taxableBaseIfCrossed` | goods + shipping; what VAT would be charged on |
+
+The two diverge exactly where it matters. A $74 item with $6 shipping is **exempt**
+at `goodsPct` 98.7%, while its `landedPct` is 106.7%. Reporting only the landed
+figure would call an exempt order taxable; reporting only the goods figure hides that
+it costs $80 to land. Report both, and never band on `landedPct`.
+
+`band` is the same vocabulary `cart-vat-nudge` already uses, so its output can be fed
+straight in.
+
+If the session renders ILS the object returns `convertible: false` and no percentage —
+the $75 threshold is USD-denominated and the script will not invent a rate.

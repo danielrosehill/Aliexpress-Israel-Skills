@@ -198,6 +198,57 @@
     return Object.fromEntries(keep.filter((k) => q.has(k)).map((k) => [k, q.get(k)]));
   }
 
+
+  /**
+   * De-minimis position against Israel's $75 threshold.
+   *
+   * Two percentages, deliberately. They answer different questions and the
+   * repo's own tax reference warns against conflating them:
+   *
+   *   goodsPct  = goods / 75          -> decides EXEMPTION. Customs tests the
+   *                                      goods value excluding shipping.
+   *   landedPct = (goods+ship) / 75   -> operational ceiling used by
+   *                                      find-under-75. What the order really
+   *                                      costs to land.
+   *
+   * A $74 item with $6 shipping is exempt (goodsPct 98.7%) while its landedPct
+   * is 106.7%. Reporting only the second would call an exempt order taxable.
+   *
+   * Threshold is denominated in USD. If the session renders ILS, the figures
+   * are returned with `convertible: false` and no percentage — convert
+   * upstream rather than guessing a rate here.
+   */
+  function deMinimis(goods, ship) {
+    const LIMIT = 75;
+    const g = goods ? goods.value : null;
+    const s = ship ? ship.value : 0;
+    const currency = (goods && goods.currency) || null;
+    if (g === null) return { threshold: LIMIT, applicable: false, reason: 'no subtotal read' };
+    if (currency !== 'USD') {
+      return { threshold: LIMIT, currency, convertible: false,
+        reason: `threshold is USD; page rendered ${currency}. Convert before comparing.`,
+        goodsValue: g, shipping: s };
+    }
+    const landed = g + s;
+    const pct = (n) => Math.round((n / LIMIT) * 1000) / 10;
+    const goodsPct = pct(g), landedPct = pct(landed);
+    const band = goodsPct >= 100 ? 'RED' : goodsPct >= 80 ? 'AMBER' : 'GREEN';
+    return {
+      threshold: LIMIT, currency: 'USD',
+      goodsValue: g, shipping: s, landedValue: Math.round(landed * 100) / 100,
+      goodsPct, landedPct,
+      headroomUsd: Math.round((LIMIT - g) * 100) / 100,
+      band,
+      exempt: g < LIMIT,
+      // When VAT does apply it is charged on CIF, i.e. goods + shipping — not
+      // on the excess over 75. Crossing the line by a cent taxes the whole order.
+      taxableBaseIfCrossed: Math.round(landed * 100) / 100,
+      note: g < LIMIT
+        ? `Exempt: goods $${g} is ${goodsPct}% of the $75 line ($${Math.round((LIMIT-g)*100)/100} headroom). Landed $${Math.round(landed*100)/100} is ${landedPct}%.`
+        : `Over the line: goods $${g} is ${goodsPct}% of $75. VAT would apply to the full CIF value $${Math.round(landed*100)/100}, not to the excess.`
+    };
+  }
+
   const { rows, source } = summaryRows();
   const payBtn = one('button[class*="place-order-primary-btn"]')
     || all('button,[role="button"]').find((b) => /pay now|place order|submit order|בצע הזמנה/i.test(txt(b)));
@@ -232,6 +283,7 @@
     // The number that matters for the Israeli $75 de-minimis is goods value,
     // which is the subtotal — not the total, and not the post-credit figure.
     goodsValue: subtotal?.amount ?? null,
+    deMinimis: deMinimis(subtotal?.amount ?? null, shipping?.amount ?? null),
     delivery: { estimate: items().map((i) => i.deliveryText).filter(Boolean)[0] ?? null },
     address: address(),
     customs: customs(),

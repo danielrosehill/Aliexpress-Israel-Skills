@@ -484,12 +484,96 @@ The cart is **not** in the DOM at all — it arrives by JSONP script injection a
 read out of page state. See `skills/export-cart/reference.md`; no selectors apply.
 
 
+## Payment result page  (V 2026-09-04)
+
+Host: `https://www.aliexpress.com/p/second-payment/pay-result.html?pmntId=<paymentId>`
+
+Reached by clicking `Pay now`. The `pmntId` is a **payment** id, not an order id.
+
+| Thing | Marker |
+|---|---|
+| success | body text `Payment Successful` + `Thank you! We've received your payment.` |
+| go to the order | `button` labelled `Check order` (`comet-btn comet-btn-primary`) |
+| home | `button` labelled `Home` |
+
+⚠️ **No order id appears on this page.** A sweep for 16–20 digit runs returned
+nothing. Do not wait for one here — the id lives on the order pages below.
+
+⚠️ **`Check order` opens a NEW TAB.** The originating tab stays on the pay-result
+page. Re-read the tab list after clicking; acting on the old tab id silently reads
+the wrong page.
+
+⚠️ **This page renders the full shipping address**, including street and apartment.
+Anything reading it must drop those lines at source and keep city + country only.
+
+A useful independent confirmation: the header cart count drops to `0` once the order
+is placed, since the purchased lines leave the cart.
+
+## Orders list  (V 2026-09-04)
+
+Host: `https://www.aliexpress.com/p/order/index.html`
+
+Like the cart, this page does **not** use `module--element--hash` naming. Anchors are
+plain unhashed classes.
+
+| Thing | Selector |
+|---|---|
+| one order card | `.order-item` |
+| card header | `.order-item-header` |
+| status | `.order-item-header-status` |
+| action row | `.order-item-btns` / `.order-item-btns-wrap` |
+| one action | `.order-item-btn` (a `comet-btn`) |
+| order ids | `a[href*="orderId="]` → `/orderId=(\d+)/` |
+
+The order id is labelled **`Ref. Number:`** on screen, not "Order ID" — match the
+number, not the phrase you expect. It also parses out of body text with
+`/Ref\. Number:\s*(\d+)/`.
+
+Status tabs: `View all`, `To pay (N)`, `Processing (N)`, `Processed (N)`, `Completed`.
+
+⚠️ **The list lags the detail page.** Immediately after a cancellation the list still
+showed `Processing` for an order whose detail page already read `Canceled`. Treat the
+detail page as authoritative for one order's status.
+
+⚠️ **There is no cancel control on the list.** Processing cards offer only
+`Edit address`; cancelled cards offer `Add to cart` and `Remove`.
+
+## Order detail  (V 2026-09-04)
+
+Host: `https://www.aliexpress.com/p/order/detail.html?orderId=<orderId>`
+
+| Thing | Selector / marker |
+|---|---|
+| order id | `orderId` query param, and body `Ref. Number: <id>` |
+| status block | `.order-status` / `.order-status-box` / `.order-status-content` |
+| status detail line | `.order-status-info` |
+| summary labels | body text `Subtotal`, `Total`, `Order placed on:`, `Paid on:`, `Payment method:` |
+
+### Action row by status
+
+| Status | Buttons observed |
+|---|---|
+| `Processing` | `Edit address`, `Extend time`, `Receipt`, **`Cancel`**, `Copy`, `Add to cart`, `Collect` |
+| `Canceled` | `Add to cart`, `Refund information`, `Copy` |
+
+**The cancel control is labelled `Cancel`, not "Cancel order"**, and it is a
+`button.comet-btn` on the **detail** page only. A skill matching `/cancel order/`
+finds nothing.
+
+⚠️ **`Cancel` arrives late.** Read ~4 s after load on a freshly placed order, the
+action row came back without it; the same row on a settled Processing order carried
+it. Do not conclude an order is uncancellable from one early read — re-read after the
+page settles.
+
+Post-cancellation the status block reads `Canceled` +
+`Your order has been cancelled successfully.`
+
 ---
 
 ## Verification log
 
 | Date | Fixture | Session | Result |
 |---|---|---|---|
-| 2026-09-04 | items `1005012170805147`, `1005012995479364`; populated cart; cart-route confirm page | EN/USD, signed in, Chrome | **Root-caused the open `add-to-cart` defect**: not a selector fault but a coordinate-space mismatch (page 2133×1003 vs screenshot 1425×712) that makes `computer` `ref` clicks land on the wrong element — `ref` click 0 requests, `element.click()` 17. Cart populated for the first time, unblocking the whole cart map: quantity stepper (`aria-label` decrease/number/increase), per-line trash, remove-confirm modal, select-all/group/line checkbox scopes, `div.cart-header-delete-btn`. Corrected two premises: `Checkout (N)` counts lines not units, and the cart badge is an unreliable `...` placeholder. `read-confirm-page.js` validated live. |
+| 2026-09-04 | items `1005012170805147`, `1005012995479364`; populated cart; cart-route confirm page | EN/USD, signed in, Chrome | **Root-caused the open `add-to-cart` defect**: not a selector fault but a coordinate-space mismatch (page 2133×1003 vs screenshot 1425×712) that makes `computer` `ref` clicks land on the wrong element — `ref` click 0 requests, `element.click()` 17. Cart populated for the first time, unblocking the whole cart map: quantity stepper (`aria-label` decrease/number/increase), per-line trash, remove-confirm modal, select-all/group/line checkbox scopes, `div.cart-header-delete-btn`. Corrected two premises: `Checkout (N)` counts lines not units, and the cart badge is an unreliable `...` placeholder. `read-confirm-page.js` validated live. | Order placed end to end and the post-purchase surface mapped for the first time: pay-result page (`pmntId`, no order id, opens a new tab), orders list (`.order-item`, `Ref. Number:`), order detail (`orderId` param, `Cancel` label, status-dependent action row). |
 | 2026-09-01 | `USB-C cable` search, `he.aliexpress.com` | EN/USD, signed in, Chrome | 5 confirmed V · 1 genuine break (card price → replaced with innerText parse) · 1 inconclusive (`PremiumQuality`) · locale premise disproved · staged-hydration gate added. Product page (delivery panel, spec table, review chips) **not yet probed** — still `U`. |
 | 2026-09-03 | items `1005012170805147`, `1005012995479364`; cart page; confirm page | EN/USD, signed in, Chrome | Write paths captured live and promoted `U` → `V`: product CTA row (unhashed `add-to-cart` / `buy-now` prefixes), quantity stepper, variant grid incl. `sku-item--selected--`, cart empty state and `Checkout (N)`, confirm page incl. the `Pay now` label correction and the constructible confirm URL. Two premises corrected: the final button is not "Place order", and variant labels are not unique. **Still uncaptured:** per-line remove, select-all, batch delete — cart could not be populated (see open defects). |

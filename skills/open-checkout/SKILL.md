@@ -87,6 +87,11 @@ estimate and the committed figure, with the divergence explained.
    means the summary blocks were renamed and the selectors need re-verifying).
 
    Parse the fields below by hand only if the script reports the fallback.
+
+   The script also returns a computed **`deMinimis`** object — `goodsPct`,
+   `landedPct`, `headroomUsd`, `band`, `exempt`. Report `goodsPct` as the figure that
+   decides exemption and `landedPct` as the real cost to land; see
+   `$CLAUDE_PLUGIN_ROOT/reference/israel-tax.md`. Never band on `landedPct`.
 6. **Reconcile** against `expected_total` and explain every difference.
 7. **Stop.** Do not click Place Order. Say explicitly that nothing was ordered.
 

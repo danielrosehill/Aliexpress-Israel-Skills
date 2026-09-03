@@ -167,10 +167,41 @@ resolves; nothing should gate on it.
 
 **Cart line order is newest-first.** Identify a line by title or SKU, never by index.
 
+## The full write path, walked  (2026-09-04)
+
+`buy-now` has now been walked to completion against fixture SKU A. Terms were read off
+the confirm page, presented, and the order placed on explicit authorisation; Daniel
+cancelled it immediately afterwards, which incidentally gave the cancelled-state
+capture too.
+
+What the run established that no amount of reading could:
+
+- **`Pay now` lands on `/p/second-payment/pay-result.html?pmntId=...`**, which shows
+  `Payment Successful` but **no order id**. The `pmntId` is a payment id. A skill that
+  waits for an order id here waits forever.
+- **`Check order` opens a new tab.** The originating tab stays put. Anything holding
+  the old tab id afterwards is reading a stale page.
+- **The order id is the `orderId` query param** on `/p/order/detail.html`, displayed
+  as **`Ref. Number:`** — not "Order ID".
+- **The cart count drops to `0`** on purchase, which is a free, independent
+  confirmation that does not depend on reading any success banner.
+- **Cancellation is `Cancel`, not "Cancel order"**, and lives only on the order detail
+  page while status is `Processing`. It also **arrives late**: read ~4 s after load on
+  a fresh order the action row lacked it entirely, while a settled Processing order
+  carried it. That is the same staged-hydration trap this repo has now hit on four
+  different pages.
+- **The orders list lags the detail page** — it still said `Processing` for an order
+  whose detail page already said `Canceled`. The detail page is authoritative.
+
+The order total was $0.00 against a $3.43 platform credit, which is exactly the case
+the terms sheet exists for: nothing was charged to a card, but $3.43 of stored balance
+was consumed. Presenting only "total: $0.00" would have been true and useless.
+
 ## Still open
 
-- **`buy-now` has not been walked to completion.** The gate and the terms sheet are
-  specified and the confirm page reads correctly, but no order has been placed.
+- **Batch delete is mapped but undriven.** `div.cart-header-delete-btn` and the
+  select-all / seller-group checkboxes are located; only the per-line delete has been
+  clicked, so a batch-delete confirmation modal (if it differs) is uncaptured.
 - **Seller-group and select-all checkboxes are located but not exercised.** All three
   scopes share `aria-label="unselect product"`; only the per-line one has been clicked.
 - **`div.cart-header-delete-btn` (batch delete) is located but not exercised**, and its
