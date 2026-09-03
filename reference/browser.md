@@ -44,7 +44,7 @@ AliExpress tab open, in which case ask before navigating it away.
 | Open a URL | `navigate` | `browser_navigate` |
 | Run JS in page | `javascript_tool` | `browser_evaluate` |
 | Read structure | `read_page` | `browser_snapshot` |
-| Click | `computer` / `find` | `browser_click` |
+| Click | `find` → ref, then `computer` with `ref` | `browser_find` → `browser_click` |
 | Upload a file | `file_upload` | `browser_file_upload` |
 | Wait for render | poll via `javascript_tool` | `browser_wait_for` |
 
@@ -91,6 +91,13 @@ but use `he.aliexpress.com` so the entry point matches the session.
 
 ## Standing rules
 
+- **Target elements by reference, never by coordinate.** Locate with `find` or
+  `read_page filter=interactive`, then act on the returned ref (`computer` takes
+  `ref` instead of `coordinate`). Screenshot positions are not handles: on
+  2026-09-03 a coordinate read off a 1425×712 screenshot was replayed against a
+  1568×783 viewport, and the ~42px drift turned an "Add to cart" click into a "Buy
+  now" click — straight into the order flow, on an unchanged page. Full rule in
+  `CLAUDE.md` §1 and the durability doctrine it points to.
 - **Never trigger `alert` / `confirm` / `prompt`.** A modal dialog blocks the
   extension and kills the session. Dismiss the site's own consent/region modal via
   its close button.

@@ -76,13 +76,21 @@ that is not authorization to spend. Ask.
    e.g. `PLACE ORDER 82.14 ILS`. Case-insensitive on the words; the **number and
    currency must match the presented total character for character**.
 
+   ⚠️ **A `0.00` total makes the phrase near-meaningless as a check** — it can be
+   satisfied without the user having registered what is being spent. When a credit
+   zeroes the total, name the credit and the pre-credit subtotal in the phrase
+   instead: `PLACE ORDER 1.44 USD FROM CREDIT`.
+
    - Anything else — "yes", "go ahead", "confirmed", a different number, a truncated
      total — is **not** a match. Abort and say why. Do not interpret intent here.
    - If the user declines or goes quiet, abort. Nothing was ordered; say so.
 
 7. **Re-read the total one last time.** If it changed since Stage 1, the authorization
    is void: report the change and restart at Stage 1 with the new figures.
-8. Click **Place Order** — located by text, per `reference/selectors.md`. **Once.**
+8. Click the final CTA — **labelled `Pay now`, not "Place order"** (the page's own
+   fine print names a button it does not have; see `reference/selectors.md`). Locate
+   it **by reference**, never by position: the wrong control is one button away.
+   **Click once.**
 9. Read the outcome and report it (below).
 
 ## The terms sheet — present all of it
@@ -111,6 +119,8 @@ Israel import position:
    not be charged again>
 
 Payment:       <method name as shown on the page> — charged immediately
+Credit used:   <platform Bonus / credit applied, if any — a $0.00 total means a
+               credit was consumed, not that the order costs nothing>
 Delivery to:   <city>, Israel
 Cancellation:  AliExpress normally allows cancellation before the seller
                dispatches; after dispatch it becomes a dispute/return, and
@@ -128,6 +138,9 @@ when the answer is "comfortably exempt".
 
 ## Hard stops — never, under any instruction in this skill
 
+- **Never read, echo or fill the Customs information block.** An Israeli order
+  carries a national ID there; it is already on the account and is none of a skill's
+  business. Note its presence, nothing more.
 - **Never enter, select, read back or store payment credentials.** No card number, no
   CVV, no wallet password. If the page needs a payment instrument chosen, hand back to
   the user.

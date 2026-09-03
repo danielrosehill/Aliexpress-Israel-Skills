@@ -112,6 +112,21 @@ unverified selectors:
 authorization cannot outlive the figures it was given: if the price moves between the
 terms sheet and the reply, the phrase no longer matches and the flow restarts.
 
+## Developing on this plugin
+
+Read [`CLAUDE.md`](CLAUDE.md) first. Two rules matter most:
+
+- **Element references, never coordinates.** Locate semantically, act on the ref. On
+  2026-09-03 a coordinate replayed against a differently-sized viewport turned an
+  "Add to cart" click into a "Buy now" click and opened the order flow, on an
+  unchanged page. The governing doctrine lives in `Claude-Site-Skill-Builder-Plugin`.
+- **Validate live, then propagate.** Skills are developed by driving the real
+  signed-in Chrome session and capturing what is actually there; a selector stays `U`
+  until a live run promotes it to `V <date>`.
+
+Method, test fixtures and the current open defects:
+[`docs/admin/development-notes.md`](docs/admin/development-notes.md).
+
 ## Shared references
 
 Loaded on demand, so the cost is paid once rather than duplicated in every skill:
@@ -158,15 +173,14 @@ reverse-engineering write-up lives in the private `Aliexpress-Cart-Analysis` rep
 - **The `he.` host does not force ILS.** An account set to EN/USD gets English and
   USD on `he.aliexpress.com`. Skills verify the rendered currency rather than trusting
   the hostname — but the currency must currently be switched by hand or by the picker.
-- **The write-path selectors are uncaptured** (`U`): the product-page CTA row, the
-  cart's checkout button and the order-confirmation page. `add-to-cart`,
-  `open-checkout` and `buy-now` locate them by **label text** (English and Hebrew) and
-  verify their effect afterwards, so a rotation degrades to a clean failure rather
-  than a wrong action — but none of it has been probed live. Promote it on the next
-  `selector-verification` run.
-- **Nothing in this plugin has been exercised against a real order.** `buy-now`'s gate
-  logic and terms sheet are specified but not yet walked end to end; the first live run
-  should be on a cheap single item.
+- **`add-to-cart` does not work yet.** Captured live 2026-09-03: two attempts,
+  clicking the correctly located CTA by reference, left the cart empty with no error.
+  Cause undiagnosed. Its cart-diff verification correctly refused to report success.
+- **Cart mutation beyond adding is uncaptured** — per-line remove, select-all, batch
+  delete and the quantity stepper on a cart line. All blocked on the same defect: the
+  cart could not be populated, so there was no line to act on.
+- **`buy-now` has not been walked to completion.** The gate and terms sheet are
+  specified; the final `Pay now` click has never been made.
 - **No local-retailer price comparison.** Deliberate — "is this cheaper than buying
   it in Israel" lives in the separate `israel-shopping` collection alongside the Zap
   comparison skills.

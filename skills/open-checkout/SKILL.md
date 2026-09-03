@@ -59,9 +59,13 @@ estimate and the committed figure, with the divergence explained.
    page you can no longer see what was excluded.
 2. **State the scope back to the user** if any line is unticked. "Checkout covers 3 of
    your 5 cart lines" is the most common surprise in this flow.
-3. Click the cart's **Checkout** CTA — located by text, per
-   `reference/selectors.md`. On the single-item path, use the listing's Buy Now CTA
-   after selecting the SKU (the selection procedure is in `add-to-cart`).
+3. Click the cart's **Checkout** CTA — located **by reference**, per
+   `reference/selectors.md`; its label carries the count (`Checkout (3)`), which
+   cross-checks `export-cart`'s selected count. On the single-item path, either click
+   the listing's Buy now CTA after selecting the SKU, or **construct the confirm URL
+   directly** from `objectId` + `skuId` + `quantity` (shape in
+   `reference/selectors.md`) — the more durable route, since it needs no CTA-row
+   interaction at all. Only ever build that URL from an id the user named.
 4. Wait for the confirm page (`/p/trade/confirm.html`) to settle. It hydrates in
    stages like every other AliExpress page: the shipping block and the tax line arrive
    after the item rows. **Reading early yields a total that is missing tax and
@@ -81,6 +85,7 @@ estimate and the committed figure, with the divergence explained.
 | **tax / VAT line** | present, absent, or zero — record which. Absent ≠ zero-rated; it means not collected here |
 | coupons / discounts applied | platform, seller and select-coupon lines separately |
 | **order total, with its currency glyph** | the payable figure |
+| `Bonus` / credit rows | **a platform credit can zero the total** — observed −$3.43 against a $3.43 order. A $0.00 total means credit was consumed, not that the order was free. Report the credit, not just the total |
 | ship-to | report **city + country only**; do not echo the full street address into the transcript |
 | payment methods offered | names only. Never read, echo or store card details |
 
@@ -99,6 +104,7 @@ Lines:
 
 Shipping:  <method> — <₪cost>, <n> days      (<k> other lanes offered)
 Discounts: <label> −<₪x>  …
+Bonus:     <credit applied, if any — say so; it can zero the total>
 Tax line:  <present: ₪x | absent — not collected at checkout | zero>
 ---------------------------------------------------------------
 TOTAL:     <₪X>   (currency verified: ₪)   ≈ $<Y> @ <rate> <source>@<date>

@@ -13,6 +13,12 @@ reads. See the write-action ladder in
 `$CLAUDE_PLUGIN_ROOT/reference/browser.md` — this skill is tier 2 (reversible,
 no money moves).
 
+> ⚠️ **Unproven as of 2026-09-03.** Two live attempts, both clicking the correctly
+> located CTA by reference, left the cart empty with no error. Cause undiagnosed —
+> see the open defects in `docs/admin/development-notes.md`. The cart-diff
+> verification below is the only thing that stops that failure being reported as
+> success. Do not soften it, and do not report an add as done without it.
+
 ## When to use
 
 - The user has decided on a listing and says "add it", "put it in the cart", "add two
@@ -40,9 +46,15 @@ no money moves).
 
 - `id_or_url` (required) — item id or full listing URL
 - `sku` (optional) — the variant to select, as the axis values the user cares about
-  (`{"Color": "black", "Length": "3m"}`) or the rendered option labels. If the listing
-  has variant axes and none are given, **stop and ask** rather than accepting whatever
-  the page pre-selected — the default is often the cheapest, not the one discussed.
+  (`{"Color": "black", "Length": "3m"}`), or better, the `skuId` itself. If the
+  listing has variant axes and none are given, **stop and ask** rather than accepting
+  whatever the page pre-selected — the default is often the cheapest, not the one
+  discussed.
+
+  ⚠️ **Labels do not identify a variant.** A real fixture carries ten options whose
+  labels include `black` twice and `Mix 2pcs` three times. Resolve to `skuId` or to
+  the option's index within its axis, and confirm by reading back
+  `sku-item--selected--` *and* the price.
 - `qty` (optional, default 1) — capped by the listing's per-order ceiling
 - `dry_run` (optional, default `false`) — do everything up to the click, report the
   resolved SKU, price and CTA that *would* be used, then stop. Use it when the SKU
@@ -60,11 +72,13 @@ no money moves).
 5. **Set quantity.** Type into the qty input rather than clicking `+` n times, then
    read the value back. If the requested qty exceeds the ceiling the input clamps
    silently — report the clamp, do not report the request.
-6. **Find the CTA by its text, not its class** — `add-to-cart` labels and the
-   discovery snippet are in `reference/selectors.md`. Two traps: the row carries
-   **two** buttons and "Buy Now" sits next to "Add to Cart" (clicking it leaves the
-   cart untouched and jumps to the order page — that is `buy-now`'s job, not this
-   one); and on Choice listings the row is laid out differently.
+6. **Locate the CTA by reference, never by position.** `find` ("Add to cart button")
+   or `read_page filter=interactive`, then act on the ref. The verified selector is
+   `button[class*="add-to-cart"]` — unhashed, exactly one match — see
+   `reference/selectors.md`. **The "Buy now" button sits ~42px away in the same row**,
+   and clicking it bypasses the cart and opens the order-confirmation page. A
+   position-based click that drifts by one button height starts an order; that has
+   already happened once here. See `CLAUDE.md` §1.
 7. Click once. **Do not click twice.** A slow response is not a failed click, and a
    second click adds a second unit.
 8. **Verify by cart diff** (below).

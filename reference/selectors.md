@@ -229,93 +229,100 @@ JS-gated: the price and the shipping panel both update on selection, so read the
 *after* clicking, never before. Used by `hunt-pricing-anomaly`,
 `check-il-compatibility` and `ship-options-il`.
 
-## Product page — CTA row: add to cart / buy now  (U)
+## Product page — CTA row: add to cart / buy now  (V 2026-09-03)
 
-**Not yet captured. Everything below is a candidate anchor.** Used by `add-to-cart`
-and `buy-now`. Both skills verify their *effect* (cart diff, order id) rather than
-trusting that a click landed, which is what makes shipping them on `U` selectors
-acceptable — but promote this section with a date once probed.
+**Confirmed live** on item `1005012170805147` (EN/USD session, signed in, Chrome).
+Both buttons carry **unhashed, semantic module prefixes** — a much better handle than
+the text matching this file previously recommended:
 
-The row holds **two** buttons and they do very different things. Locating "a button
-in the CTA row" is not enough; match the label.
+| Action | Selector | Full class observed |
+|---|---|---|
+| Add to cart | `button[class*="add-to-cart"]` | `comet-v2-btn comet-v2-btn-primary comet-v2-btn-large add-to-cart--addtocart--Qhoji3M add-to-cart--hasBuyNow--QxW176q comet-v2-btn-important` |
+| Buy now | `button[class*="buy-now"]` | `comet-v2-btn comet-v2-btn-primary comet-v2-btn-large buy-now--buynow--OH44OI8 comet-v2-btn-important` |
 
-| Action | English label | Hebrew label | Effect |
-|---|---|---|---|
-| Add to cart | `Add to Cart`, `Add to cart` | `הוסף לסל`, `הוספה לסל` | tier 2, reversible |
-| Buy now | `Buy Now`, `Buy now` | `קנה עכשיו` | **skips the cart**, jumps to the confirm page |
+Each matched **exactly 1** element. `comet-v2-*` is AliExpress's Comet design system
+and is not hashed; only the `--Qhoji3M` suffix rotates, which is why the `class*=`
+substring holds. The `add-to-cart--hasBuyNow--` modifier is present when a Buy Now
+button sits alongside — a useful signal that the row has two controls.
 
-Discovery by text, scoped to real buttons:
+Labels on this fixture: `Add to cart` / `Buy now` (sentence case, not `Add to Cart`).
+Match case-insensitively and keep the Hebrew alternates (`הוסף לסל`, `קנה עכשיו`) as
+a fallback for a Hebrew-rendered session.
 
-```js
-const findCta = (kind) => {
-  const pat = kind === 'cart'
-    ? /add to cart|הוס[פף] ?ל?סל|הוספה לסל/i
-    : /buy now|קנה עכשיו/i;
-  return [...document.querySelectorAll('button, [role="button"], a[class*="button"]')]
-    .find(b => pat.test((b.innerText || b.getAttribute('aria-label') || '').trim()));
-};
+⚠️ **The two buttons are ~42px apart.** Locate by reference and act on the reference —
+never by position. A coordinate off by one button height starts an order. See
+`CLAUDE.md` §1.
+
+### Quantity stepper (V 2026-09-03)
+
+`− <input> +`, where the input is `input.comet-v2-input-number-input` (unhashed
+Comet class) holding the current value as text. The two buttons are its siblings.
+Read the value back after changing it; increment/decrement has **not** yet been
+exercised — see `docs/admin/development-notes.md`.
+
+### Variant grid (V 2026-09-03)
+
+| Part | Selector |
+|---|---|
+| axis block | `[class*="sku-item--property--"]` |
+| axis title (carries the selected value, e.g. `Color: black`) | `[class*="sku-item--title--"]` |
+| option | `[class*="sku-item--box--"]`, `[class*="sku-item--image--"]` |
+| **selected** option | class contains `sku-item--selected--` |
+
+⚠️ **Option labels are not unique.** The fixture's ten colour options include `black`
+twice and `Mix 2pcs` three times. A variant cannot be identified by label — resolve to
+`skuId` or to the option's index within its axis, then confirm via
+`sku-item--selected--` **and** the rendered price.
+
+## Cart page — checkout CTA and empty state  (V 2026-09-03)
+
+Host: `https://www.aliexpress.com/p/shoppingcart/index.html`.
+
+| Thing | Selector / marker |
+|---|---|
+| checkout CTA label | text `Checkout (<n>)` — the count is in the label |
+| cart badge | `[class*="shop-cart--number--"]` (observed `shop-cart--number--axE62FE`) |
+| empty state | body text `Your cart is empty`, badge `0`, `Checkout (0)`, `Estimated total US $0.00` |
+
+The count inside the `Checkout (N)` label is a free cross-check against
+`export-cart`'s selected count — match on a substring, not the whole string. With
+nothing ticked the CTA is present but reads `(0)`.
+
+**Per-line remove, select-all and batch-delete are still uncaptured** — the cart could
+not be populated during the 2026-09-03 run. See the open defects in
+`docs/admin/development-notes.md`.
+
+## Order confirmation page  (V 2026-09-03)
+
+Host: `https://www.aliexpress.com/p/trade/confirm.html`.
+
+**The final button is labelled `Pay now`** — not "Place order". The fine print beneath
+it reads *"Upon clicking 'Place Order', I confirm I have read and acknowledged all
+terms and policies"*, naming a button the page does not have. Match `Pay now` first,
+and keep `place order|submit order|בצע הזמנה` as fallbacks.
+
+Reached by clicking Buy now, **or constructed directly** — the whole order is in the
+query string:
+
+```
+/p/trade/confirm.html?objectId=<itemId>&skuId=<skuId>&skuAttr=14%3A193%23black
+  &quantity=1&countryCode=IL&provinceCode=910000060000000000
+  &cityCode=910000060006000000&shippingCompany=CAINIAO_FULFILLMENT_STD_PRE_SG
+  &aeOrderFrom=main_detail
 ```
 
-Traps to expect when this is probed:
+Blocks observed on the page, top to bottom: Shipping address, **Customs information**
+(masked national ID — never read, echo or fill it), Payment Methods, the item block
+with its own quantity stepper, then the Summary panel.
 
-- **Choice listings lay the row out differently** from non-Choice ones.
-- The button may render **disabled until every SKU axis is chosen**, and a disabled
-  click is a silent no-op — assert `!el.disabled && el.getAttribute('aria-disabled')
-  !== 'true'` before clicking.
-- Sticky/duplicate CTA bars: a floating bar can appear on scroll, so the same label
-  may match **twice**. Take the first visible match (`offsetParent !== null`), and if
-  two visible matches exist, prefer the one inside the main product block.
-- The qty input is a plain `input` near the row; set `value` and dispatch `input` +
-  `change`, then **read it back** — it clamps to the per-order ceiling silently.
-- An "out of stock" / "ships to another country" state replaces the row entirely
-  rather than disabling it. A missing CTA is more likely this than a rotated selector.
+Summary rows are label-anchored: `Subtotal`, `Promo codes`, `Shipping fee`, `Bonus`,
+`Total`. On the test fixture these read $1.44 / $1.99 / **−$3.43** / **$0.00** — a
+platform credit can zero the total, so a total alone does not tell you whether money
+or credit is being spent. **There was no tax/VAT row**, i.e. Israeli VAT was not
+collected at checkout for this order.
 
-## Cart page — checkout CTA  (U)
-
-Host: `https://www.aliexpress.com/p/shoppingcart/index.html`. Used by
-`open-checkout`.
-
-```js
-[...document.querySelectorAll('button, [role="button"], a')]
-  .find(b => /checkout|לתשלום|המשך לתשלום|בצע הזמנה/i.test((b.innerText||'').trim()));
-```
-
-- The CTA acts on **ticked lines only**. Read the selection state with `export-cart`
-  *before* clicking; the confirm page no longer shows what was excluded.
-- The button label often carries the count (`Checkout (3)`) — useful as a
-  cross-check against `export-cart`'s selected count, so match on a substring.
-- With nothing ticked the CTA is disabled, not absent.
-
-## Order confirmation page  (U)
-
-Host: `https://www.aliexpress.com/p/trade/confirm.html`. Used by `open-checkout`
-(read) and `buy-now` (read, then one click).
-
-**Read the whole page's text and parse by label rather than hunting for per-field
-selectors.** The layout is heavily A/B tested and label-anchored parsing has a much
-better chance of surviving a build than any class will:
-
-```js
-// settle gate — the total arrives after the item rows
-const totalText = () => (document.body.innerText
-  .match(/(?:Total|סה"?כ|סכום לתשלום)[^\n]*?((?:US ?\$|₪)\s?[\d,]+\.?\d*)/i) || [])[1] ?? null;
-```
-
-Poll `totalText()` until two consecutive reads a second apart agree, then read the
-rest. **Reading on first paint yields a total missing shipping and tax** that looks
-like a plausible total — the most dangerous failure mode on this page.
-
-Labels to parse for: total / `סה"כ`, shipping / `משלוח`, tax or VAT / `מע"מ`,
-discount or coupon / `הנחה` `קופון`, and the place-order CTA:
-
-```js
-[...document.querySelectorAll('button, [role="button"]')]
-  .find(b => /place order|submit order|בצע הזמנה|שלח הזמנה/i.test((b.innerText||'').trim()));
-```
-
-`buy-now` clicks that **once** and never retries on an ambiguous outcome — the orders
-list at `https://www.aliexpress.com/p/order/index.html` is the authority on whether an
-order exists.
+Parse by label rather than by class; the layout is A/B tested. Poll until the total
+stops changing before reading, since it arrives after the item rows.
 
 ## Cart
 
@@ -330,4 +337,4 @@ read out of page state. See `skills/export-cart/reference.md`; no selectors appl
 | Date | Fixture | Session | Result |
 |---|---|---|---|
 | 2026-09-01 | `USB-C cable` search, `he.aliexpress.com` | EN/USD, signed in, Chrome | 5 confirmed V · 1 genuine break (card price → replaced with innerText parse) · 1 inconclusive (`PremiumQuality`) · locale premise disproved · staged-hydration gate added. Product page (delivery panel, spec table, review chips) **not yet probed** — still `U`. |
-| — | write paths (product CTA row, cart checkout CTA, confirm page) | — | **Not probed.** Added `U` alongside `add-to-cart` / `open-checkout` / `buy-now` in v1.6.0. These skills verify their effect (cart diff, order id) instead of trusting the selector, so a rotation degrades to a clean failure rather than a wrong action — but the section should be promoted to `V` on the next live run. |
+| 2026-09-03 | items `1005012170805147`, `1005012995479364`; cart page; confirm page | EN/USD, signed in, Chrome | Write paths captured live and promoted `U` → `V`: product CTA row (unhashed `add-to-cart` / `buy-now` prefixes), quantity stepper, variant grid incl. `sku-item--selected--`, cart empty state and `Checkout (N)`, confirm page incl. the `Pay now` label correction and the constructible confirm URL. Two premises corrected: the final button is not "Place order", and variant labels are not unique. **Still uncaptured:** per-line remove, select-all, batch delete — cart could not be populated (see open defects). |
