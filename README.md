@@ -9,6 +9,11 @@ Skills drive AliExpress in **the user's own Chrome** via Claude-in-Chrome. Headl
 routes are fallbacks, not the default — see
 [`reference/browser.md`](reference/browser.md).
 
+As of v1.6.0 the bundle is **no longer read-only**: it can add to the cart, read the
+real checkout page, and place an order behind a confirmation gate. What each skill is
+allowed to do is set by the [write-action ladder](#write-actions) rather than by a
+blanket rule.
+
 ## The three ways an AliExpress order fails for an Israeli buyer
 
 The bundle is organised around them:
@@ -56,8 +61,22 @@ Finding the thing in the first place: `search-aliexpress`, `search-by-synonyms`,
   IL, verified landed cost < $75. Reports CLEAR / TIGHT / OVER with the FX-break rate.
 - `cart-vat-nudge` — running cart total against the $75 line, with the cliff penalty
   and mitigation when it's crossed.
-- `export-cart` — read the live signed-in cart into JSON/CSV. Feeds `cart-vat-nudge`
-  directly. Read-only by design.
+- `export-cart` — read the live signed-in cart and write it out as **JSON, CSV and
+  Markdown** (`--format all`). Feeds `cart-vat-nudge` directly. Does not mutate the
+  cart. Files land in the user-data root, not the repo.
+
+**Buying** — the write path, see [below](#write-actions)
+
+- `add-to-cart` — add one listing, one SKU, one quantity to the real cart, then prove
+  it landed by **diffing the cart** rather than trusting the success toast. Tier 2:
+  reversible, no money.
+- `open-checkout` — open the order-confirmation page and read the *committed* numbers:
+  the shipping lane actually selected, coupons that only apply at checkout, and
+  whether AliExpress collects Israeli VAT there. Reconciles against the estimate and
+  **stops** — nothing is ordered.
+- `buy-now` — place one real order behind a two-stage gate: terms presented in full,
+  turn ends, and the confirmation phrase must carry the exact total. Never touches a
+  payment credential, an OTP or 3-D Secure. Tier 3.
 
 **Maintenance**
 
@@ -65,6 +84,33 @@ Finding the thing in the first place: `search-aliexpress`, `search-by-synonyms`,
   `reference/selectors.md` and report what still works. Uses a fixed fixture query
   (`USB-C cable`) so a change in the result means a change in the site. Admin skill;
   not for shopping.
+
+## Write actions
+
+The read-only rule that governed v1.0–v1.5 is replaced by a ladder graduated on
+consequence. Full text in [`reference/browser.md`](reference/browser.md).
+
+| Tier | Consequence | Skills | Gate |
+|---|---|---|---|
+| 1 | reads only | everything else, incl. `export-cart` and `open-checkout` | none |
+| 2 | reversible, no money | `add-to-cart` | act on a clear instruction |
+| 3 | **spends money** | `buy-now` | terms presented, turn ended, exact confirmation phrase |
+
+Three rules apply to tiers 2 and 3 and are the reason they are safe to ship on
+unverified selectors:
+
+- **Verify the effect, not the click.** The success toast, the cart badge and an HTTP
+  200 have all been observed to lie on this site. `add-to-cart` diffs the cart;
+  `buy-now` re-reads the total, and on an unreadable outcome reads the orders page.
+- **One click, never a blind retry.** Nothing here is idempotent — a second add is a
+  second unit, a second placement is a second order. An unknown outcome is resolved by
+  reading state, not by repeating the action.
+- **Authorization does not accumulate.** Approval to add is not approval to check out;
+  one order confirmed is not the next one confirmed.
+
+`buy-now`'s confirmation phrase embeds the total (`PLACE ORDER 82.14 ILS`), so an
+authorization cannot outlive the figures it was given: if the price moves between the
+terms sheet and the reply, the phrase no longer matches and the flow restarts.
 
 ## Shared references
 
@@ -112,6 +158,15 @@ reverse-engineering write-up lives in the private `Aliexpress-Cart-Analysis` rep
 - **The `he.` host does not force ILS.** An account set to EN/USD gets English and
   USD on `he.aliexpress.com`. Skills verify the rendered currency rather than trusting
   the hostname — but the currency must currently be switched by hand or by the picker.
+- **The write-path selectors are uncaptured** (`U`): the product-page CTA row, the
+  cart's checkout button and the order-confirmation page. `add-to-cart`,
+  `open-checkout` and `buy-now` locate them by **label text** (English and Hebrew) and
+  verify their effect afterwards, so a rotation degrades to a clean failure rather
+  than a wrong action — but none of it has been probed live. Promote it on the next
+  `selector-verification` run.
+- **Nothing in this plugin has been exercised against a real order.** `buy-now`'s gate
+  logic and terms sheet are specified but not yet walked end to end; the first live run
+  should be on a cheap single item.
 - **No local-retailer price comparison.** Deliberate — "is this cheaper than buying
   it in Israel" lives in the separate `israel-shopping` collection alongside the Zap
   comparison skills.

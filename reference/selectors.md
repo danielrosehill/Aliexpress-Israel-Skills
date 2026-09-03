@@ -229,6 +229,94 @@ JS-gated: the price and the shipping panel both update on selection, so read the
 *after* clicking, never before. Used by `hunt-pricing-anomaly`,
 `check-il-compatibility` and `ship-options-il`.
 
+## Product page — CTA row: add to cart / buy now  (U)
+
+**Not yet captured. Everything below is a candidate anchor.** Used by `add-to-cart`
+and `buy-now`. Both skills verify their *effect* (cart diff, order id) rather than
+trusting that a click landed, which is what makes shipping them on `U` selectors
+acceptable — but promote this section with a date once probed.
+
+The row holds **two** buttons and they do very different things. Locating "a button
+in the CTA row" is not enough; match the label.
+
+| Action | English label | Hebrew label | Effect |
+|---|---|---|---|
+| Add to cart | `Add to Cart`, `Add to cart` | `הוסף לסל`, `הוספה לסל` | tier 2, reversible |
+| Buy now | `Buy Now`, `Buy now` | `קנה עכשיו` | **skips the cart**, jumps to the confirm page |
+
+Discovery by text, scoped to real buttons:
+
+```js
+const findCta = (kind) => {
+  const pat = kind === 'cart'
+    ? /add to cart|הוס[פף] ?ל?סל|הוספה לסל/i
+    : /buy now|קנה עכשיו/i;
+  return [...document.querySelectorAll('button, [role="button"], a[class*="button"]')]
+    .find(b => pat.test((b.innerText || b.getAttribute('aria-label') || '').trim()));
+};
+```
+
+Traps to expect when this is probed:
+
+- **Choice listings lay the row out differently** from non-Choice ones.
+- The button may render **disabled until every SKU axis is chosen**, and a disabled
+  click is a silent no-op — assert `!el.disabled && el.getAttribute('aria-disabled')
+  !== 'true'` before clicking.
+- Sticky/duplicate CTA bars: a floating bar can appear on scroll, so the same label
+  may match **twice**. Take the first visible match (`offsetParent !== null`), and if
+  two visible matches exist, prefer the one inside the main product block.
+- The qty input is a plain `input` near the row; set `value` and dispatch `input` +
+  `change`, then **read it back** — it clamps to the per-order ceiling silently.
+- An "out of stock" / "ships to another country" state replaces the row entirely
+  rather than disabling it. A missing CTA is more likely this than a rotated selector.
+
+## Cart page — checkout CTA  (U)
+
+Host: `https://www.aliexpress.com/p/shoppingcart/index.html`. Used by
+`open-checkout`.
+
+```js
+[...document.querySelectorAll('button, [role="button"], a')]
+  .find(b => /checkout|לתשלום|המשך לתשלום|בצע הזמנה/i.test((b.innerText||'').trim()));
+```
+
+- The CTA acts on **ticked lines only**. Read the selection state with `export-cart`
+  *before* clicking; the confirm page no longer shows what was excluded.
+- The button label often carries the count (`Checkout (3)`) — useful as a
+  cross-check against `export-cart`'s selected count, so match on a substring.
+- With nothing ticked the CTA is disabled, not absent.
+
+## Order confirmation page  (U)
+
+Host: `https://www.aliexpress.com/p/trade/confirm.html`. Used by `open-checkout`
+(read) and `buy-now` (read, then one click).
+
+**Read the whole page's text and parse by label rather than hunting for per-field
+selectors.** The layout is heavily A/B tested and label-anchored parsing has a much
+better chance of surviving a build than any class will:
+
+```js
+// settle gate — the total arrives after the item rows
+const totalText = () => (document.body.innerText
+  .match(/(?:Total|סה"?כ|סכום לתשלום)[^\n]*?((?:US ?\$|₪)\s?[\d,]+\.?\d*)/i) || [])[1] ?? null;
+```
+
+Poll `totalText()` until two consecutive reads a second apart agree, then read the
+rest. **Reading on first paint yields a total missing shipping and tax** that looks
+like a plausible total — the most dangerous failure mode on this page.
+
+Labels to parse for: total / `סה"כ`, shipping / `משלוח`, tax or VAT / `מע"מ`,
+discount or coupon / `הנחה` `קופון`, and the place-order CTA:
+
+```js
+[...document.querySelectorAll('button, [role="button"]')]
+  .find(b => /place order|submit order|בצע הזמנה|שלח הזמנה/i.test((b.innerText||'').trim()));
+```
+
+`buy-now` clicks that **once** and never retries on an ambiguous outcome — the orders
+list at `https://www.aliexpress.com/p/order/index.html` is the authority on whether an
+order exists.
+
 ## Cart
 
 The cart is **not** in the DOM at all — it arrives by JSONP script injection and is
@@ -242,3 +330,4 @@ read out of page state. See `skills/export-cart/reference.md`; no selectors appl
 | Date | Fixture | Session | Result |
 |---|---|---|---|
 | 2026-09-01 | `USB-C cable` search, `he.aliexpress.com` | EN/USD, signed in, Chrome | 5 confirmed V · 1 genuine break (card price → replaced with innerText parse) · 1 inconclusive (`PremiumQuality`) · locale premise disproved · staged-hydration gate added. Product page (delivery panel, spec table, review chips) **not yet probed** — still `U`. |
+| — | write paths (product CTA row, cart checkout CTA, confirm page) | — | **Not probed.** Added `U` alongside `add-to-cart` / `open-checkout` / `buy-now` in v1.6.0. These skills verify their effect (cart diff, order id) instead of trusting the selector, so a rotation degrades to a clean failure rather than a wrong action — but the section should be promoted to `V` on the next live run. |

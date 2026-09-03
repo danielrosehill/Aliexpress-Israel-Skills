@@ -105,5 +105,33 @@ but use `he.aliexpress.com` so the entry point matches the session.
   See the gate in `selectors.md`.
 - **A captcha or risk challenge is a stop, not a retry loop.** Report it and hand
   back to the user; retrying from the same session makes it worse.
-- **Read-only.** No skill in this plugin adds to the cart, changes quantities, or
-  checks out. Tell the user what to click instead.
+- **Read by default; write only where the skill says so.** See the ladder below.
+
+## Write actions — the escalation ladder
+
+Until v1.6.0 this plugin was entirely read-only. It no longer is, so the rule is now
+graduated by consequence rather than blanket. A skill may only act at the tier its
+own SKILL.md claims.
+
+| Tier | What it does | Skills | Rule |
+|---|---|---|---|
+| **1 — read** | Reads pages, reviews, cart, prices | everything else | No gate. Default. |
+| **2 — reversible write** | Mutates state the user can undo in one click, no money | `add-to-cart` | Act on a clear instruction. Verify the effect, not the click. |
+| **3 — money** | Places a real order | `buy-now` | Two-stage gate: present terms, end the turn, require an exact confirmation phrase bound to the total. |
+
+`open-checkout` is tier 1 despite its name: it reads the confirmation page and stops.
+
+Rules that hold across tiers 2 and 3:
+
+- **Verify the effect, never the click.** A success toast, a cart badge and an HTTP
+  200 are all proxy signals that have been observed to lie here. Re-read the thing
+  that was supposed to change — `add-to-cart` diffs the cart, `buy-now` re-reads the
+  total and, on an unreadable outcome, the orders page.
+- **One click, no blind retry.** Idempotency is not available: a second add is a
+  second unit, a second placement is a second order. If the outcome is unknown, go
+  and read the state; do not repeat the action.
+- **Authorization is per action, and does not accumulate.** Approval to add does not
+  approve checkout; approval for one order does not approve the next.
+- **Never touch a payment credential, an OTP or a 3-D Secure step.** Hand back.
+- **A challenge mid-write is a stop.** Do not re-run the flow from the top — the first
+  attempt may already have taken effect.

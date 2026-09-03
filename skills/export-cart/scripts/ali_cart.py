@@ -6,6 +6,7 @@ Read-only. Signs requests locally; you supply the cookies.
     export AE_COOKIE="$(cat cookies.txt)"     # raw Cookie: header value
     ./aliexpress_cart.py --format table
     ./aliexpress_cart.py --format json -o cart.json
+    ./aliexpress_cart.py --format all            # json + csv + md file bundle
     ./aliexpress_cart.py --count
 
 To get the cookie string: on an open, logged-in aliexpress.com tab, run
@@ -290,11 +291,22 @@ def main() -> int:
     ap.add_argument("--currency", default="USD")
     ap.add_argument("--ship-to", default="IL")
     ap.add_argument("--locale", default="en_US")
-    ap.add_argument("--format", choices=("table", "json", "csv"), default="table")
+    ap.add_argument(
+        "--format",
+        choices=("table", "json", "csv", "md", "all"),
+        default="table",
+        help="table (stdout) | json | csv | md | all (writes a file bundle)",
+    )
     ap.add_argument("--count", action="store_true", help="Print item count only")
     ap.add_argument("--include-invalid", action="store_true")
     ap.add_argument("--raw", action="store_true", help="Dump the whole payload")
     ap.add_argument("-o", "--output", help="Write to file instead of stdout")
+    ap.add_argument(
+        "--out-dir",
+        help="Destination for --format md/all (default: the user-data root rule, "
+        "see cart_formats.resolve_out_dir)",
+    )
+    ap.add_argument("--stem", help="Filename stem for --format md/all")
     args = ap.parse_args()
 
     if not args.cookie:
@@ -317,6 +329,25 @@ def main() -> int:
             out = json.dumps(payload, indent=2, ensure_ascii=False)
         else:
             rows = parse_items(payload, include_invalid=args.include_invalid)
+
+            if args.format in ("md", "all"):
+                # Shared with Route A (Chrome), so both routes emit byte-identical
+                # files from the same renderers.
+                from cart_formats import normalise, resolve_out_dir, write_bundle
+
+                bundle = normalise(
+                    {
+                        "source": "mtop.aliexpress.trade.cart.render (signed)",
+                        "items": rows,
+                    }
+                )
+                fmts = ("json", "csv", "md") if args.format == "all" else ("md",)
+                out_dir, rule = resolve_out_dir(args.out_dir)
+                for path in write_bundle(bundle, fmts, out_dir, args.stem):
+                    print(f"wrote {path}", file=sys.stderr)
+                print(f"destination: {out_dir}  ({rule})", file=sys.stderr)
+                return 0
+
             if args.format == "json":
                 out = json.dumps(
                     {"summary": summarise(rows), "items": rows},
