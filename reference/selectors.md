@@ -194,6 +194,17 @@ calls over ~20 cards brought up `acs.aliexpress.com/…/_____tmd_____/punish` ca
 iframes. A per-card userscript built on it was withdrawn the same day (Daniel: it
 would keep triggering). Use it only for a handful of items, sequentially.
 
+Prior art (checked 2026-10-26, GitHub code search + Greasy Fork): **no batch delivery
+endpoint is known anywhere.** Every tool reads delivery or shipping one listing at a
+time from `pdp.pc.query`: Greasy Fork "AliExpress SuperDuper Ultra Search" (#591927,
+sequential, 0.8–1.5 s random gap, backs off on `RGV587_ERROR`, caches results, skips
+cards whose own "Free shipping" badge already answers), "AliExpress Real Price"
+(#531472, windowed rate limiter with backoff), `justinritchie/aliexpress-mcp-server`,
+`Averyy/fetchaller-mcp` (notes that TMD is session-based and that reads are plain
+after a solve), and `browser-use/browser-harness` (product API "refused almost
+immediately"; treat it as enrichment, not bulk). Search cards carry no ETA in any
+of them.
+
 Observed lanes to IL on that search: "AliExpress Selection Standard" 7–12 or 7–14 days
 (Choice listings), and "AliExpress standard shipping" 11–20 days.
 
