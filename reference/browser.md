@@ -18,7 +18,7 @@ to complete without a challenge:
 
 **Why Chrome is first and not just "a visible browser":** three things this plugin
 needs only exist in the user's own profile — a signed-in session (`export-cart`
-cannot work without it), an established locale handshake so the ILS/Hebrew cookies
+cannot work without it), an established locale handshake so the locale cookies
 are already written, and a browsing history that makes the session look ordinary.
 A fresh Playwright profile has none of those and gets challenged sooner.
 
@@ -52,43 +52,49 @@ AliExpress tab open, in which case ask before navigating it away.
 The JS snippets in the skill files are written to run unchanged under either
 `javascript_tool` or `browser_evaluate`.
 
-## Locale handshake (ILS + Hebrew + ship-to IL)
+## Locale handshake (preference: EN/USD, ship to IL)
 
 Everything price- or shipping-related depends on this. Verify it before reading any
-number; do not report USD prices from a session that was supposed to be ILS.
+number, and never report prices in a currency the user didn't ask for.
 
-The site state lives in the `aep_usuc_f` cookie on `.aliexpress.com`:
+**The default preference is EN/USD, ship to IL.** EN/ILS, HE/USD and HE/ILS are
+supported presets (`skills/set-locale`). Run `update-locale` (`mode=check`) at the
+start of a task. It corrects drift and says so.
+
+The state lives in two cookies on `.aliexpress.com`:
 
 ```
-c_tp=ILS   b_locale=iw_IL   x_locale=iw_IL   intl_locale=iw_IL   region=IL
+aep_usuc_f   …&site=isr&c_tp=<USD|ILS>&…&region=IL&b_locale=<en_US|iw_IL>&…
+xman_us_f    …&x_locale=<en_US|iw_IL>&…&intl_locale=<en_US|iw_IL>
 ```
 
-It is `SameSite=None`, HttpOnly — **not readable or writable from JS**.
+Both are `SameSite=None` and **readable and writable from page JS**. The earlier note
+here said HttpOnly, and that was wrong (corrected 2026-10-26). Writing those keys and
+reloading switches the rendered locale (measured both directions, signed in). The
+on-page picker `[aria-label*="country, region or language"]` is the human route. Both
+are documented in `skills/set-locale`.
 
-**⚠️ Navigating to `he.aliexpress.com` does not establish it.** Verified 2026-09-01:
-a signed-in profile set to EN/USD served `lang="en"` and `US $` prices on the `he.`
-host, with the switcher reading `EN/USD`. The account preference beats the hostname.
-Use the on-page country/currency picker to change it, and **always verify what
-actually rendered** rather than assuming the host did the work.
+**The hostname does not set the locale.** A signed-in EN/USD account gets English
+and `US $` on `he.aliexpress.com` (2026-09-01, again 2026-10-26). The site also drifts
+an Israeli account back to Hebrew/ILS from time to time. `scripts/locale-guard.user.js`
+undoes that.
 
-Verification without cookie access — read what the page actually rendered:
+Verify by reading what rendered:
 
 ```js
 ({
-  currencyGlyph: document.body.innerText.match(/[₪]|US ?\$/)?.[0] ?? null,
-  htmlLang: document.documentElement.lang,
-  dir: document.documentElement.dir,          // 'rtl' when iw_IL took
+  switcher: document.querySelector('[class*="ship-to--menuItem"]')?.textContent.trim(), // "EN/USD"
+  currencyGlyph: document.body.innerText.match(/₪|US ?\$/)?.[0] ?? null,
+  htmlLang: document.documentElement.lang,                                              // "en" | "iw"
 })
 ```
 
-If the glyph is `US $` rather than `₪`, the handshake did not take — which is the
-**default outcome** on an EN/USD account, not an edge case. Use the on-page
-currency/ship-to picker, re-verify, and **stop and report** if it still fails rather
-than converting silently. The picker is reachable via
-`[aria-label*="country, region or language"]`.
+If it doesn't match the preference after one correction, **stop and report**. Don't
+convert prices silently.
 
-`he.` is the canonical Israel-Hebrew host. The site honours the cookie on any host,
-but use `he.aliexpress.com` so the entry point matches the session.
+Use `www.aliexpress.com` for entry URLs. An IL account is redirected to
+`he.aliexpress.com/…?gatewayAdapt=glo2isr` anyway, and the cookies, not the host,
+decide the language.
 
 ## Standing rules
 

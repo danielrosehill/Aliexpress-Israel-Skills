@@ -1,7 +1,9 @@
 # AliExpress Israel Skills
 
 A Claude Code plugin of AliExpress shopping skills built for an **Israel-based
-buyer**: prices in ILS, the site pinned to the Israel channel, Choice-first search,
+buyer**: ship-to Israel in your preferred locale (default EN/USD; ILS and Hebrew
+supported, with a guard against the site's drift back to HE/ILS), searches that resolve
+**true prices** behind anchored and bundle cards, real delivery promises to Israel, Choice-first search,
 Israeli-buyer review filtering, shipping-lane evaluation for Israel, and the $75
 customs de-minimis treated as a first-class concern throughout.
 
@@ -31,8 +33,21 @@ Finding the thing in the first place: `search-aliexpress`, `search-by-synonyms`,
 
 **Finding**
 
-- `search-aliexpress` — search from an IL buyer's view (ILS, Israel channel). Choice
-  is the default filter; free-shipping / 4★ / ship-from (IL/CN/TR) compose on top.
+- `deep-search` — **the honest search.** Drops bundle cards, opens every plausible
+  listing, resolves the price of the SKU you actually want and its delivery promise
+  to Israel, ranks on those, and exports the findings. Composes the next five.
+- `search-aliexpress` — search from an IL buyer's view (ship-to IL, preferred
+  locale). Choice is the default filter; free-shipping / 4★ / ship-from (IL/CN/TR)
+  compose on top. Card prices are indicative only.
+- `exclude-bundles` — drop "Bundle deals" cards (they link to `BundleDeals2` and show
+  a component's price) and account for each drop. Choice does not remove them.
+- `true-price` — click through every SKU on a listing. Reports the matching SKU's
+  price against the card price, flagging cards anchored on a cheaper variant.
+- `fast-delivery-il` — keep listings whose delivery promise to IL is within N days
+  (default 9), read per SKU from the listing and the Fast-delivery badge. There is no
+  search filter for it, and Choice is not a proxy for it.
+- `export-findings` — write a run into the working repo as full JSON, a token-lean
+  brief for the next agent, and a Markdown + PDF report.
 - `search-by-synonyms` — products hide under many names. Rotates keyword mutations
   (plain / trade / function / CN-marketplace-literal / material) over
   `search-aliexpress`, dedupes by item id, then filters hard on one defining spec.
@@ -77,6 +92,14 @@ Finding the thing in the first place: `search-aliexpress`, `search-by-synonyms`,
 - `buy-now` — place one real order behind a two-stage gate: terms presented in full,
   turn ends, and the confirmation phrase must carry the exact total. Never touches a
   payment credential, an OTP or 3-D Secure. Tier 3.
+
+**Locale**
+
+- `set-locale` — set the standing language/currency preference (EN/USD default;
+  EN/ILS, HE/USD, HE/ILS). Picker or cookie route, verified by what renders. Ships
+  `scripts/locale-guard.user.js`, a userscript that undoes the site's drift.
+- `update-locale` — check/correct the live locale at the start of a task, or switch
+  for one task and restore.
 
 **Maintenance**
 
@@ -132,7 +155,7 @@ Method, test fixtures and the current open defects:
 Loaded on demand, so the cost is paid once rather than duplicated in every skill:
 
 - [`reference/browser.md`](reference/browser.md) — route order (Chrome → gateway
-  Playwright → headless → fetch), tool mapping, the ILS/Hebrew/ship-to-IL locale
+  Playwright → headless → fetch), tool mapping, the locale (preference + ship-to-IL)
   handshake, and the standing rules (no dialogs, no hashed selectors, captcha is a
   stop).
 - [`reference/israel-tax.md`](reference/israel-tax.md) — the bands, the FOB/CIF
@@ -178,9 +201,11 @@ reverse-engineering write-up lives in the private `Aliexpress-Cart-Analysis` rep
   `reference/selectors.md`). The 2026-09-01 verification run covered the search page
   only; the product page has not been probed. `ship-options-il` and
   `check-il-compatibility` carry text-anchored fallbacks until it is.
-- **The `he.` host does not force ILS.** An account set to EN/USD gets English and
-  USD on `he.aliexpress.com`. Skills verify the rendered currency rather than trusting
-  the hostname — but the currency must currently be switched by hand or by the picker.
+- **Locale drift.** AliExpress periodically puts an Israeli account back to HE/ILS.
+  `set-locale`/`update-locale` correct it by cookie (verified both directions,
+  2026-10-26), and `scripts/locale-guard.user.js` does it automatically in a browser
+  with a userscript manager. Whether the picker's Save writes an account-level
+  preference is not yet established.
 - **Seller-group and select-all checkboxes are located but never exercised.** All
   three checkbox scopes share `aria-label="unselect product"`; only the per-line one
   has been clicked. `div.cart-header-delete-btn` (batch delete) is likewise mapped but

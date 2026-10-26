@@ -157,6 +157,22 @@ Assert `aria-checked === 'true'` **after** the re-render. If it is still `false`
 zero-result query, captcha, or unhydrated DOM. Wait once, retry once, then bail with
 a clear error — do not report unfiltered results as filtered.
 
+⚠️ **A chip click can update the URL and `aria-checked` without re-rendering the grid**
+(2026-10-26, `8BitDo SN30 Pro`, HE/ILS, anonymous). After clicking `choice_atm` the
+wrapper read `true` and the URL gained `selectedSwitches`, but the 18 cards were
+identical to the unfiltered set. Navigating to the filtered URL gave a different set.
+**Preferred: build the URL and navigate**, then assert the chip and read the cards:
+
+```
+https://www.aliexpress.com/w/wholesale-<q-dashed>.html?g=y&SearchText=<q+plus>&selectedSwitches=filterCode%3Achoice_atm
+```
+
+Several switches are comma-joined in `selectedSwitches` (assumed from the encoding,
+not yet tested with two). Ship-from is `shpf_co=IL|TR|CN` (from the page's own refine
+JSON, `paramName: "shpf_co"`). **No delivery-time switch exists on the IL channel**:
+the page JSON defines only `freeshipping`, `choice_atm`, `4StarRating` and ship-from
+(2026-10-26). Delivery filtering is per listing; see `fast-delivery-il`.
+
 ## Search results page — ship-from country  (V)
 
 Single-select radio group. Options on an IL account: `-1` (All) / `IL` / `TR` / `CN`.
@@ -173,6 +189,14 @@ document.querySelector('.il_v [aria-checked="true"]')?.getAttribute('aria-label'
 to scoping under the "Shipping from" / "נשלח מ" header by text.
 
 ## Search results page — product cards  (V)
+
+**Superseded 2026-10-26: use `scripts/search-cards.js`.** The anchor-`innerText`
+parse below stopped working. The first `/item/` anchors are image links with no text,
+and on a direct load card `innerText` came back empty on a rendered page. The working
+read is `.search-item-card-wrapper-gallery` (unhashed) → leaf `textContent`, first
+currency match. Bundle cards are identified by their `BundleDeals2` link (see
+`exclude-bundles`). Card prices are the cheapest SKU's, not the pictured item's (see
+`true-price`). The history below is kept for context.
 
 **`[class*="price"]` is broken — do not use it.** Measured 2026-09-01 on a fully
 hydrated page: **0 of 13** cards matched. The price is split across `<span>` leaves
@@ -248,11 +272,27 @@ Usernames are masked site-wide (`AliExpress Shopper`) — never present a review
 identity. Dates render per `b_locale`, so in Hebrew (`11 בפבר׳ 2026`); parse
 defensively and return the raw string on failure.
 
-## Product page — delivery / shipping options panel  (U)
+## Product page — delivery / shipping options panel  (partly V 2026-10-26)
 
-**Not yet captured. Do not treat anything below as validated.** `ship-options-il`
-carries the capture procedure; run it once and promote the results into this section
-with a verification date.
+**Collapsed row: V 2026-10-26** (items 1005006458599504, 1005007345086449, EN/USD and
+HE/ILS, ship-to IL, signed in):
+
+- `.dynamic-shipping` (unhashed) contains `.dynamic-shipping-line`. Text:
+  `Free pick-up` / `Delivery: Nov 02 - 07` (HE: `מסירה: נובמבר 02 - 07`).
+- The **`Fast delivery`** badge (HE: `אספקה מהירה`) is **not** inside
+  `.dynamic-shipping`. It sits in the "AliExpress commitment" block below it, next to
+  `₪4.00 coupon code if delayed` and `Refund if no delivery in 45 days`. Read it from
+  `document.body.innerText` as a whole line.
+- The delivery row re-renders per SKU. Read it after selecting the SKU.
+  `scripts/listing-probe.js` does this for every SKU and parses `days_min`/`days_max`.
+- Listing price: `[class*="price-default--current--"]`, crossed-out
+  `[class*="price-default--original--"]` (prefixes unhashed).
+- SKU grid: `[data-sku-row]` → `[data-sku-col]` tiles (stable data attributes); the
+  name is the tile's `title` or its `img[alt]`. Unavailable tiles carry a `disabled`
+  class fragment.
+
+**The options modal (every lane, carrier, cost) is still not captured.**
+`ship-options-il` carries the capture procedure.
 
 What is known:
 
@@ -574,6 +614,7 @@ Post-cancellation the status block reads `Canceled` +
 
 | Date | Fixture | Session | Result |
 |---|---|---|---|
+| 2026-10-26 | `8BitDo SN30 Pro`, `8BitDo Lite 2` searches (Choice); items 1005006458599504, 1005007345086449 | HE/ILS anonymous, then EN/USD signed in; persistent agent browser (Playwright over CDP) | Card parse moved to `.search-item-card-wrapper-gallery` + leaf `textContent` (`scripts/search-cards.js`). **Chip click updated URL without re-rendering**: navigate the URL instead. Bundle cards identified by `BundleDeals2` links. No delivery-time switch on IL. Delivery row, Fast-delivery badge, listing price and SKU grid captured (`scripts/listing-probe.js`). Locale cookies proven JS-readable and writable (`browser.md` corrected). First listing load anonymous hit reCAPTCHA. |
 | 2026-09-04 | items `1005012170805147`, `1005012995479364`; populated cart; cart-route confirm page | EN/USD, signed in, Chrome | **Root-caused the open `add-to-cart` defect**: not a selector fault but a coordinate-space mismatch (page 2133×1003 vs screenshot 1425×712) that makes `computer` `ref` clicks land on the wrong element — `ref` click 0 requests, `element.click()` 17. Cart populated for the first time, unblocking the whole cart map: quantity stepper (`aria-label` decrease/number/increase), per-line trash, remove-confirm modal, select-all/group/line checkbox scopes, `div.cart-header-delete-btn`. Corrected two premises: `Checkout (N)` counts lines not units, and the cart badge is an unreliable `...` placeholder. `read-confirm-page.js` validated live. | Order placed end to end and the post-purchase surface mapped for the first time: pay-result page (`pmntId`, no order id, opens a new tab), orders list (`.order-item`, `Ref. Number:`), order detail (`orderId` param, `Cancel` label, status-dependent action row). |
 | 2026-09-01 | `USB-C cable` search, `he.aliexpress.com` | EN/USD, signed in, Chrome | 5 confirmed V · 1 genuine break (card price → replaced with innerText parse) · 1 inconclusive (`PremiumQuality`) · locale premise disproved · staged-hydration gate added. Product page (delivery panel, spec table, review chips) **not yet probed** — still `U`. |
 | 2026-09-03 | items `1005012170805147`, `1005012995479364`; cart page; confirm page | EN/USD, signed in, Chrome | Write paths captured live and promoted `U` → `V`: product CTA row (unhashed `add-to-cart` / `buy-now` prefixes), quantity stepper, variant grid incl. `sku-item--selected--`, cart empty state and `Checkout (N)`, confirm page incl. the `Pay now` label correction and the constructible confirm URL. Two premises corrected: the final button is not "Place order", and variant labels are not unique. **Still uncaptured:** per-line remove, select-all, batch delete — cart could not be populated (see open defects). |
