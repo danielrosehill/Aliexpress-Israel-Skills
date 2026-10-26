@@ -11,7 +11,7 @@
       "stamp_since": "2.2.0",
       "page_marker": "#no-combo-badge",
       "default": true,
-      "effect": "Search pages: a bar tagged USERSCRIPT above the grid with 'Show bundle deals' (off by default, so bundles are hidden) and 'Hide over $72' (off by default; headroom under the $75 de-minimis). Both remembered."
+      "effect": "Search pages: a bar tagged USERSCRIPT above the grid with 'Show bundle deals' (off by default), a max-price slider (Any, $10-$70, $72; headroom under the $75 de-minimis), and a 'Choice All In' button applying Choice + Free shipping in one navigation."
     },
     {
       "id": "locale-guard",

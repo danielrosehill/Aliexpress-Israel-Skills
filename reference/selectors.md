@@ -167,8 +167,10 @@ identical to the unfiltered set. Navigating to the filtered URL gave a different
 https://www.aliexpress.com/w/wholesale-<q-dashed>.html?g=y&SearchText=<q+plus>&selectedSwitches=filterCode%3Achoice_atm
 ```
 
-Several switches are comma-joined in `selectedSwitches` (assumed from the encoding,
-not yet tested with two). Ship-from is `shpf_co=IL|TR|CN` (from the page's own refine
+Several switches are comma-joined in `selectedSwitches`: **verified 2026-10-26** with
+`filterCode:choice_atm,filterCode:freeshipping` (both chips `aria-checked=true`, result
+set changed). **Brand+** is `filterCode:brand` on the mobile search only; the desktop
+search ignores it (same results, 2026-10-26) and desktop cards carry no Brand+ marker. Ship-from is `shpf_co=IL|TR|CN` (from the page's own refine
 JSON, `paramName: "shpf_co"`). **No delivery-time switch exists on the IL channel**:
 the page JSON defines only `freeshipping`, `choice_atm`, `4StarRating` and ship-from
 (2026-10-26). Delivery filtering is per listing; see `fast-delivery-il`.
