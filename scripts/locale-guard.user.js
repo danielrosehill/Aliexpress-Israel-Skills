@@ -6,8 +6,8 @@
 // @match        *://*.aliexpress.com/*
 // @run-at       document-start
 // @grant        none
-// @updateURL    https://raw.githubusercontent.com/danielrosehill/Aliexpress-Israel-Skills/main/scripts/locale-guard.user.js
-// @downloadURL  https://raw.githubusercontent.com/danielrosehill/Aliexpress-Israel-Skills/main/scripts/locale-guard.user.js
+// @updateURL    https://raw.githubusercontent.com/danielrosehill/Aliexpress-Israel-Skills/master/scripts/locale-guard.user.js
+// @downloadURL  https://raw.githubusercontent.com/danielrosehill/Aliexpress-Israel-Skills/master/scripts/locale-guard.user.js
 // ==/UserScript==
 
 (function () {

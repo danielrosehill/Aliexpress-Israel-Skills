@@ -17,7 +17,7 @@
       "id": "locale-guard",
       "name": "AliExpress locale guard",
       "repo": "danielrosehill/Aliexpress-Israel-Skills",
-      "source_url": "https://raw.githubusercontent.com/danielrosehill/Aliexpress-Israel-Skills/main/scripts/locale-guard.user.js",
+      "source_url": "https://raw.githubusercontent.com/danielrosehill/Aliexpress-Israel-Skills/master/scripts/locale-guard.user.js",
       "stamp_attr": "data-us-locale-guard",
       "stamp_since": "1.1.0",
       "page_marker": null,
