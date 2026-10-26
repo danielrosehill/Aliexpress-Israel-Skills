@@ -11,7 +11,7 @@
       "stamp_since": "2.2.0",
       "page_marker": "#no-combo-badge",
       "default": true,
-      "effect": "Search pages: a bar tagged USERSCRIPT above the grid with 'Show bundle deals' (off by default), a max-price slider (Any, $10-$70, $72; headroom under the $75 de-minimis), and a 'Choice All In' button applying Choice + Free shipping in one navigation."
+      "effect": "Search pages (2.6.0): a bar tagged USERSCRIPT above the grid with On, 'Show bundle deals' (off by default), Hide ads, a max-price slider (Any, $10-$70, $72), 'Choice All In', 'Deep search' (loads pages 1..N into one filtered grid via POST /fn/search-pc/index, session-cached), and a Filters panel (min price, rating, sold, title words, duplicates, sort, 4-star, ships-from). Brand+ pages: same filters, cards dimmed not hidden."
     },
     {
       "id": "locale-guard",

@@ -175,6 +175,33 @@ JSON, `paramName: "shpf_co"`). **No delivery-time switch exists on the IL channe
 the page JSON defines only `freeshipping`, `choice_atm`, `4StarRating` and ship-from
 (2026-10-26). Delivery filtering is per listing; see `fast-delivery-il`.
 
+## Search pages as JSON: `POST /fn/search-pc/index` (V 2026-10-26)
+
+What the search page calls when you page. Same-origin, cookies only, **unsigned**:
+no mtop signer and no captcha token. Body:
+`{pageVersion: window._dida_config_.pageVersion, target:"root", data:{...URL params, page:N, origin:"y"}, eventName:"onChange", dependency:[]}`
+(`pageVersion` can be omitted). Honours `selectedSwitches`, `shpf_co`, `sortType`.
+`data.result.mods.itemList.content` holds 60 items. The fields used:
+
+- `productId`
+- `title.displayTitle`
+- `prices.salePrice.minPrice` / `formattedPrice` / `currencyCode`
+- `evaluation.starRating`
+- `trade.realTradeCount` / `tradeDesc`
+- `productType`: `"ad"` or `"natural"`
+- `productDetailUrl`: BundleDeals2 for bundles
+- `sellingPoints[]`: `source:"choice_atm"` = Choice; `tagText` "Free shipping…"
+- `image.imgUrl`, protocol-relative
+
+`data.result.pageInfo.totalResults` gives the total. Measured: 10 sequential pages
+1.5–3 s apart, 600 items in 50 s, no captcha. The no-combo userscript's Deep search
+(2.6.0) is built on it.
+
+Sponsored cards in the DOM: the item link carries `aem_p4p_detail` / `search_p4p_id`
+(15 of 15 ads, 0 of 45 organic). Brand+ pages (`/ssr/300002748/…?brandClusterId=`)
+are a virtualised list. Rows of 8 `normalRow_<hash>` cells mount and unmount as you
+scroll (`#recyclerview`).
+
 ## Where the delivery estimate lives (surface map, V 2026-10-26)
 
 Searched for a card-level delivery estimate to IL; signed in, EN/USD, `8BitDo SN30 Pro`.
