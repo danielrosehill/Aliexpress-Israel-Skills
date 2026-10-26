@@ -1,0 +1,41 @@
+{
+  "_about": "Registry of the AliExpress userscripts that install-userscripts and update-userscripts manage. Each script stamps its running version on <html> as the `stamp_attr` attribute (via GM_info), which is how an agent reads the installed version from a page without opening the Tampermonkey dashboard. `source_url` is what Tampermonkey installs from and polls through @updateURL. Updated 2026-10-26.",
+  "test_page": "https://www.aliexpress.com/w/wholesale-8BitDo-Lite-2.html?g=y&SearchText=8BitDo+Lite+2",
+  "scripts": [
+    {
+      "id": "no-combo",
+      "name": "AliExpress — Hide Combo Deals (with Toggle)",
+      "repo": "danielrosehill/AliExpress-No-Combo-Deals",
+      "source_url": "https://raw.githubusercontent.com/danielrosehill/AliExpress-No-Combo-Deals/main/aliexpress-no-combo-v2.user.js",
+      "stamp_attr": "data-us-no-combo",
+      "stamp_since": "2.2.0",
+      "page_marker": "#no-combo-badge",
+      "default": true,
+      "effect": "Hides bundle / combo cards on search pages; a 'Hide bundle deals' switch above the grid shows them again and remembers the choice."
+    },
+    {
+      "id": "locale-guard",
+      "name": "AliExpress locale guard",
+      "repo": "danielrosehill/Aliexpress-Israel-Skills",
+      "source_url": "https://raw.githubusercontent.com/danielrosehill/Aliexpress-Israel-Skills/main/scripts/locale-guard.user.js",
+      "stamp_attr": "data-us-locale-guard",
+      "stamp_since": "1.1.0",
+      "page_marker": null,
+      "default": false,
+      "effect": "Puts the locale cookies back to EN/USD ship-to IL when the site drifts to HE/ILS. Optional: offer it, see set-locale.",
+      "caveat": "Its preference lives in the WANT constant. An update replaces the file, so a user who edited WANT away from EN/USD must re-apply the edit after updating."
+    },
+    {
+      "id": "find-similar",
+      "name": "AliExpress — Find Similar (inline)",
+      "repo": "danielrosehill/Aliexpress-Find-Similar-Userscript",
+      "source_url": null,
+      "stamp_attr": null,
+      "stamp_since": null,
+      "page_marker": ".dr-find-similar-btn",
+      "default": false,
+      "effect": "Adds a Find Similar button to every product card.",
+      "caveat": "The repo is private, so there is no URL Tampermonkey can install or update from. Detect it by page_marker only; install by pasting the file from a local clone."
+    }
+  ]
+}

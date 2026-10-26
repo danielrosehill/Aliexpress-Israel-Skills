@@ -58,6 +58,16 @@ Finding the thing in the first place: `search-aliexpress`, `search-by-synonyms`,
 - `hunt-pricing-anomaly` — on a multi-variant listing, find where price doesn't scale
   with volume or quantity. Computes ₪-per-litre per size and reads bulk tiers.
 
+**Userscripts**
+
+- `install-userscripts` — install the AliExpress userscripts listed in
+  [`reference/userscripts.json`](reference/userscripts.json) (Hide Combo Deals by
+  default, locale guard on offer) into Tampermonkey, and prove each one is running
+  via the version it stamps on the page (`<html data-us-…>`).
+- `update-userscripts` — compare each installed version against the published
+  `@version`, update the outdated ones through Tampermonkey's update page, and
+  verify the new version is the one running.
+
 **Evaluating**
 
 - `ship-options-il` — opens the delivery panel and reads *every* lane to Israel:

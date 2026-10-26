@@ -1,15 +1,22 @@
 // ==UserScript==
 // @name         AliExpress locale guard
 // @namespace    aliexpress-israel-skills
-// @version      1.0.0
+// @version      1.1.0
 // @description  Keeps AliExpress on your chosen language / currency / ship-to. When the site drifts (e.g. back to Hebrew/ILS), rewrites the locale cookies and reloads once.
 // @match        *://*.aliexpress.com/*
 // @run-at       document-start
 // @grant        none
+// @updateURL    https://raw.githubusercontent.com/danielrosehill/Aliexpress-Israel-Skills/main/scripts/locale-guard.user.js
+// @downloadURL  https://raw.githubusercontent.com/danielrosehill/Aliexpress-Israel-Skills/main/scripts/locale-guard.user.js
 // ==/UserScript==
 
 (function () {
   'use strict';
+
+  // Version stamp, read by the update-userscripts skill.
+  if (typeof GM_info !== 'undefined') {
+    document.documentElement.setAttribute('data-us-locale-guard', GM_info.script.version);
+  }
 
   // ---- Your preference. Presets: EN/USD (default), EN/ILS, HE/USD, HE/ILS. ----
   const WANT = { locale: 'en_US', currency: 'USD', region: 'IL' };

@@ -23,6 +23,8 @@ description: Keep only AliExpress listings that promise fast delivery to Israel 
 same Fast-delivery lane, and only the listing row decides. On 2026-10-26, every
 Choice SN30 Pro / Lite 2 listing checked (11) carried the badge,
 with windows of 7–12 days (`Nov 02 - 07`) or 7–14 days (`Nov 02 - 09`) from today.
+Re-checked 2026-10-26 18:24 UTC on 1005007345086449: still `Fast delivery`, `Delivery:
+Nov 03 - 08`, so the lane had not been retired. Its absence from search cards is normal.
 
 ## Inputs
 

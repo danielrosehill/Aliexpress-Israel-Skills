@@ -1,7 +1,7 @@
 {
   "name": "aliexpress-israel-skills",
-  "version": "1.9.0",
-  "description": "AliExpress shopping skills for an Israel-based buyer: honest search that resolves true SKU prices behind anchored and bundle cards, real delivery promises to Israel (fast-lane filter), locale preference with drift guard (default EN/USD), Choice-first search, IL-only review filtering, shipping-lane evaluation, plug/voltage checks, and the $75 customs de-minimis across listings and the live cart. Exports findings and the cart to JSON/Markdown/PDF and, behind a graduated write ladder, adds to cart, reads the real checkout page, and places an order behind a confirmation gate. Drives the user's own browser; headless is a fallback.",
+  "version": "1.10.0",
+  "description": "AliExpress shopping skills for an Israel-based buyer: honest search that resolves true SKU prices behind anchored and bundle cards, real delivery promises to Israel (fast-lane filter), locale preference with drift guard (default EN/USD), Choice-first search, IL-only review filtering, shipping-lane evaluation, plug/voltage checks, and the $75 customs de-minimis across listings and the live cart. Exports findings and the cart to JSON/Markdown/PDF and, behind a graduated write ladder, adds to cart, reads the real checkout page, and places an order behind a confirmation gate. Installs and updates the companion AliExpress userscripts (Hide Combo Deals, locale guard) in Tampermonkey. Drives the user's own browser; headless is a fallback.",
   "author": {
     "name": "Daniel Rosehill",
     "url": "https://github.com/danielrosehill"
@@ -31,6 +31,8 @@
     "true-price",
     "bundles",
     "fast-delivery",
-    "locale"
+    "locale",
+    "userscripts",
+    "tampermonkey"
   ]
 }

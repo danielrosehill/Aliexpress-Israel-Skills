@@ -90,8 +90,9 @@ userscript. It runs at `document-start` on `*.aliexpress.com`, compares the cook
 `WANT` (set it to the preset), rewrites them when they drift, and reloads, at most
 once per 30 s per tab, so it can't loop.
 
-To install: open the userscript manager's dashboard → new script → paste the file →
-edit `WANT` → save. Installing an extension script is the user's call. Offer it and
+To install: run `install-userscripts` with `scripts=locale-guard` (it installs from
+the repo's raw URL, so `update-userscripts` can keep it current), then edit `WANT` if
+the preset isn't EN/USD. Installing an extension script is the user's call. Offer it and
 explain it in one line. Agents driving a separate automation profile can instead
 run the `update-locale` check at the start of each task.
 
