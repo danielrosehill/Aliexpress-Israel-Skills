@@ -227,6 +227,14 @@ to scoping under the "Shipping from" / "נשלח מ" header by text.
 
 ## Search results page — product cards  (V)
 
+**Paging and filter chips don't reload the page, and the grid cells are reused** (V
+2026-10-26, `usb c hub`, EN/USD, IL, signed in). Clicking next-page or a
+`filterCode:` chip changes the URL in place (same `window`). The 60
+`.search-item-card-wrapper-gallery` nodes stay and take new products. Anything
+cached per cell node goes stale: no-combo 2.5.0 kept page-1 bundle flags and hid 5
+normal items on page 2 (fixed in 2.5.1 by re-reading every cell on every pass).
+Key per-card state on the product id, never on the node.
+
 **Superseded 2026-10-26: use `scripts/search-cards.js`.** The anchor-`innerText`
 parse below stopped working. The first `/item/` anchors are image links with no text,
 and on a direct load card `innerText` came back empty on a rendered page. The working
