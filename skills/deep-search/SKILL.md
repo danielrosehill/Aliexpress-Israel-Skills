@@ -70,3 +70,9 @@ Findings: findings/2026-10-26_sn30pro-bt.{md,pdf,brief.json,json}
   row decides.
 - New-buyer prices (`New shoppers save …` on the card) are excluded from
   `true_price` unless the user is a new buyer.
+- **A shared browser can be navigated under you.** On 2026-10-26 another session
+  took the same tab mid-sweep, and the probe ran on an unrelated site. Open a
+  dedicated tab, have the probe return `url`, and **discard any result whose `id`
+  doesn't match the item requested**. Stop and report if it repeats.
+- A sweep worker must store the probe's JSON as returned. Never retype or fill in
+  fields: per-SKU delivery copied from the first SKU is not a reading.

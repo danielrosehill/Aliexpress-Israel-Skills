@@ -85,7 +85,7 @@ def render_md(f: dict) -> str:
             gap = r.get("price_gap_pct")
             t.append(
                 f"| {r.get('model', '')} | **{money(r.get('true_price'), cur)}** | {money(r.get('card_price'), cur)} | "
-                f"{'' if gap in (None, 0) else f'{gap:+.0f}%'} | {r.get('true_sku') or ''} | {days(d)} | "
+                f"{'' if gap in (None, 0) else f'{gap:+.1f}%'} | {r.get('true_sku') or ''} | {days(d)} | "
                 f"{'yes' if d.get('fast_badge') else ''} | {r.get('rating') or ''} | {r.get('sold') or ''} | "
                 f"[{r.get('id')}]({r.get('url')}) |"
             )
@@ -149,7 +149,7 @@ def render_typst(f: dict) -> str:
             d = r.get("delivery") or {}
             gap = r.get("price_gap_pct")
             vals = [r.get("model", ""), money(r.get("true_price"), cur), money(r.get("card_price"), cur),
-                    "" if gap in (None, 0) else f"{gap:+.0f}%", r.get("true_sku") or "", days(d),
+                    "" if gap in (None, 0) else f"{gap:+.1f}%", r.get("true_sku") or "", days(d),
                     "yes" if d.get("fast_badge") else "", r.get("rating") or "", r.get("sold") or ""]
             cells += [f"[{e(v)}]" for v in vals]
             cells.append(f'[#link("{r.get("url")}")[{e(r.get("id"))}]]')

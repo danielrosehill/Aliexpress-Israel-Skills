@@ -87,7 +87,8 @@ async () => {
     rating: (t.match(/\n\s*(\d\.\d)\s*\n\s*([\d,]+) (?:Reviews|ביקורות)/) || [])[1] ?? null,
     reviews: (t.match(/\n\s*(\d\.\d)\s*\n\s*([\d,]+) (?:Reviews|ביקורות)/) || [])[2] ?? null,
     sold: (t.match(/([\d,]+\+?) (?:sold|נמכרו)/) || [])[1] ?? null,
-    choice: !!document.querySelector('img[alt="Choice"], [class*="choice"]'),
+    // No `choice` field: a `[class*="choice"]` probe fired on non-Choice listings
+    // (2026-10-26). Take Choice status from the search (choice_atm switch) instead.
     probed_at: new Date().toISOString(),
     skus,
   };

@@ -32,7 +32,9 @@ So: **never report a card price as what something costs.** Resolve it.
    waits for the shipping block, clicks every enabled tile in every `[data-sku-row]`
    (`[data-sku-col]`, stable attributes) and returns per SKU: `name`, `price`,
    `orig`, `delivery`, `days_min`, `days_max`, `fast`, `stock`, plus listing
-   `store`, `rating`, `reviews`, `sold`, `choice`.
+   `store`, `rating`, `reviews`, `sold`. Choice status comes from the search
+   (a listing found with the `choice_atm` switch on). The page has no reliable
+   Choice marker yet.
    - `{error: "captcha"}` → stop and ask the user to solve it in the browser. Never
      try to get past it automatically. A signed-in profile is challenged far less.
    - Many items → run the sweep in a subagent writing JSONL, so the probe source and
