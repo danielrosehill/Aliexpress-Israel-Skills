@@ -11,7 +11,7 @@
       "stamp_since": "2.2.0",
       "page_marker": "#no-combo-badge",
       "default": true,
-      "effect": "Hides bundle / combo cards on search pages; a 'Show bundle deals' switch above the grid (off by default) shows them and remembers the choice."
+      "effect": "Search pages: a bar tagged USERSCRIPT above the grid with 'Show bundle deals' (off by default, so bundles are hidden) and 'Hide over $72' (off by default; headroom under the $75 de-minimis). Both remembered."
     },
     {
       "id": "locale-guard",
