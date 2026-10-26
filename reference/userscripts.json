@@ -11,7 +11,7 @@
       "stamp_since": "2.2.0",
       "page_marker": "#no-combo-badge",
       "default": true,
-      "effect": "Hides bundle / combo cards on search pages; a 'Hide bundle deals' switch above the grid shows them again and remembers the choice."
+      "effect": "Hides bundle / combo cards on search pages; a 'Show bundle deals' switch above the grid (off by default) shows them and remembers the choice."
     },
     {
       "id": "locale-guard",

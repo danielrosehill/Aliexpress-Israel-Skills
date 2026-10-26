@@ -42,7 +42,7 @@ them current afterwards is `update-userscripts`.
      `repo` → Save.
 4. **Prove it:** reload `test_page` and re-read the stamp (or the marker for
    unstamped scripts). For `no-combo`, also check that `#no-combo-badge` reads
-   `Hide bundle deals (N hidden)` when the search has bundle cards. "Installed"
+   `Show bundle deals (N hidden)` when the search has bundle cards. "Installed"
    means the stamp is on the live page; the install page closing is not proof.
 
 ## Output
