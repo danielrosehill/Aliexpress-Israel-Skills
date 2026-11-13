@@ -12,7 +12,7 @@ to complete without a challenge:
 |---|-------|-------|---------|
 | 0 | **Persistent agent browser** — a long-lived, signed-in Chrome the user can watch and take over remotely, driven through a Playwright MCP attached over CDP | the user's `<profile>__browser_*` tools (same names as Playwright MCP) | **Default when the user has one.** Everything route 1 offers (real profile, sign-in, cookies, residential IP) without taking over the user's own browser window. Pick the profile that holds the user's AliExpress login. After `browser_navigate`, call `browser_snapshot`. |
 | 1 | **Claude-in-Chrome** — the user's own visible Chrome, real profile | `mcp__claude-in-chrome__*` | **Default for everything interactive.** Already signed in, real fingerprint, real Israeli residential IP, cookies persist between runs. |
-| 2 | Gateway Playwright — headed browser on residenceserver | `mcp__gateway__playwright__*` | Unattended / scheduled runs where no user Chrome is open. Still egresses from the home Israeli residential IP. |
+| 2 | Gateway Playwright — headed browser on a remote server you control | the gateway's `playwright__*` tools | Unattended / scheduled runs where no user Chrome is open. Still egresses from the home Israeli residential IP. |
 | 3 | Headless / scraper libraries | Puppeteer, `aliexpress-product-scraper`, Apify actors | Batch work only, and only when 1 and 2 are unavailable. Expect challenges and stale prices. |
 | 4 | Plain fetch (`WebFetch`, `geo-egress__fetch_*`) | — | Will not work for search results, listings, reviews or cart. All are JS-rendered. Do not start here. |
 
