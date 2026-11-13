@@ -211,7 +211,7 @@ Searched for a card-level delivery estimate to IL; signed in, EN/USD, `8BitDo SN
 | Desktop search cards (DOM) | No |
 | Desktop search embedded JSON (item records, refine filters) | No. Item keys hold price, trace and selling-point codes only. Filters are `selectedSwitches` (Choice, free shipping, 4★), `shpf_co`, `pr`, `attr` |
 | Mobile web search (`m.aliexpress.com/wholesale/…`, phone UA) | No. Cards show price, sold count, rating, "Free shipping over US $12" |
-| Native app search | Yes, per Daniel (not inspectable: app-signed API) |
+| Native app search | Yes, per the user (not inspectable: app-signed API) |
 | Listing page HTML (plain `fetch`) | No: a 77 KB shell |
 | Listing data API `mtop.aliexpress.pdp.pc.query` (what the listing page calls) | **Yes:** `deliveryDayMin` / `deliveryDayMax` / `deliveryDate` / `company` / `deliveryOptionCode`. The first pair is the displayed option (7/12 = "Delivery: Nov 03 - 08" on 1005007345086449) |
 
@@ -220,7 +220,7 @@ The listing API can be called from a search page through the page's own signer:
 dataType:'originaljsonp', data:{productId, _lang, _currency, country:'IL', clientType:'pc', ext}})`
 (about 0.5 s each). **It triggers anti-bot punishment on bulk use.** Three concurrent
 calls over ~20 cards brought up `acs.aliexpress.com/…/_____tmd_____/punish` captcha
-iframes. A per-card userscript built on it was withdrawn the same day (Daniel: it
+iframes. A per-card userscript built on it was withdrawn the same day (the user: it
 would keep triggering). Use it only for a handful of items, sequentially.
 
 Prior art (checked 2026-10-26, GitHub code search + Greasy Fork): **no batch delivery

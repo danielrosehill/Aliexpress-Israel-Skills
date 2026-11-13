@@ -6,7 +6,7 @@ this file carries the method, the fixtures and the open defects.
 
 ## The development path
 
-**Drive Daniel's own Chrome, validate against the real account, then propagate into
+**Drive the user's own Chrome, validate against the real account, then propagate into
 the repo.** Stated as a standing preference on 2026-09-03.
 
 Why this and not headless: the skills depend on things that only exist in a real
@@ -36,7 +36,7 @@ query. Do not swap these out casually.
 | Write-path test SKU A | item `1005012170805147`, sku `12000057692892678` (`skuAttr=14:193#black`) — dual-tip marker pens, US $1.44, Choice, seller Shop1105409239 | `add-to-cart`, `open-checkout`, `buy-now` |
 | Write-path test SKU B | item `1005012995479364` — Claude Code mascot keychain, US $3.41 | quantity stepper, multi-line cart, removal |
 
-Recorded 2026-09-03 at Daniel's direction. SKU A is deliberately cheap and its
+Recorded 2026-09-03 at the user's direction. SKU A is deliberately cheap and its
 purchase is pre-approved, so the tier-3 path can be walked end to end for real. Both
 are far under the $75 de-minimis, so a test order carries no tax consequence.
 
@@ -170,7 +170,7 @@ resolves; nothing should gate on it.
 ## The full write path, walked  (2026-09-04)
 
 `buy-now` has now been walked to completion against fixture SKU A. Terms were read off
-the confirm page, presented, and the order placed on explicit authorisation; Daniel
+the confirm page, presented, and the order placed on explicit authorisation; the user
 cancelled it immediately afterwards, which incidentally gave the cancelled-state
 capture too.
 

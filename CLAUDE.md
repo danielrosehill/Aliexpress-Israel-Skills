@@ -45,7 +45,7 @@ Screenshots are evidence for a human. They are not a handle for a skill.
 The development path here is **drive real Chrome, validate against the account, then
 commit** — not write from assumption and hope. Concretely:
 
-- Claude-in-Chrome against Daniel's own signed-in profile is the development
+- Claude-in-Chrome against the user's own signed-in profile is the development
   environment, not just the runtime. See `reference/browser.md` for route order.
 - A selector is `U` until a live run confirms it, and `V` carries the date it was
   confirmed. Do not ship a `V` you inferred.
