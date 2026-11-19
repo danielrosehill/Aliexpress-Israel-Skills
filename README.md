@@ -86,6 +86,9 @@ Finding the thing in the first place: `search-aliexpress`, `search-by-synonyms`,
   IL, verified landed cost < $75. Reports CLEAR / TIGHT / OVER with the FX-break rate.
 - `cart-vat-nudge` — running cart total against the $75 line, with the cliff penalty
   and mitigation when it's crossed.
+- `cart-total` — calculate / show the cart total: every line (SKU, qty, unit price,
+  ticked, seller, shipping) plus the Summary block as rendered and the $75 position.
+  Read-only; the payable figure comes from `open-checkout`.
 - `export-cart` — read the live signed-in cart and write it out as **JSON, CSV and
   Markdown** (`--format all`). Feeds `cart-vat-nudge` directly. Does not mutate the
   cart. Files land in the user-data root, not the repo.
@@ -95,16 +98,18 @@ Finding the thing in the first place: `search-aliexpress`, `search-by-synonyms`,
 - `add-to-cart` — add one listing, one SKU, one quantity to the real cart, then prove
   it landed by **diffing the cart** rather than trusting the success toast. Tier 2:
   reversible, no money.
-- `edit-cart` — remove a line, change a line's quantity, or tick/untick lines for
+- `edit-cart` — **remove from cart**, change a line's quantity, or tick/untick lines for
   checkout, each proven by a cart diff. Tier 2; confirms before touching lines you
   did not name.
 - `open-checkout` — open the order-confirmation page and read the *committed* numbers:
   the shipping lane actually selected, coupons that only apply at checkout, and
   whether AliExpress collects Israeli VAT there. Reconciles against the estimate and
   **stops** — nothing is ordered.
-- `buy-now` — place one real order behind a two-stage gate: terms presented in full,
-  turn ends, and the confirmation phrase must carry the exact total. Never touches a
-  payment credential, an OTP or 3-D Secure. Tier 3.
+- `buy-now` — place one real order with a human in the loop: terms presented in full
+  (items, shipping, VAT, payment method, total), the turn ends, and a clear "go ahead"
+  in the next reply is the approval. The total is re-read before the click and
+  re-presented if it moved. Never touches a payment credential, an OTP or 3-D Secure.
+  Tier 3.
 
 **Locale**
 
@@ -130,7 +135,7 @@ consequence. Full text in [`reference/browser.md`](reference/browser.md).
 |---|---|---|---|
 | 1 | reads only | everything else, incl. `export-cart` and `open-checkout` | none |
 | 2 | reversible, no money | `add-to-cart`, `edit-cart` | act on a clear instruction |
-| 3 | **spends money** | `buy-now` | terms presented, turn ended, exact confirmation phrase |
+| 3 | **spends money** | `buy-now` | terms presented, turn ended, clear affirmative in a later turn; total re-read before the click |
 
 Three rules apply to tiers 2 and 3 and are the reason they are safe to ship on
 unverified selectors:
@@ -144,9 +149,10 @@ unverified selectors:
 - **Authorization does not accumulate.** Approval to add is not approval to check out;
   one order confirmed is not the next one confirmed.
 
-`buy-now`'s confirmation phrase embeds the total (`PLACE ORDER 82.14 ILS`), so an
-authorization cannot outlive the figures it was given: if the price moves between the
-terms sheet and the reply, the phrase no longer matches and the flow restarts.
+`buy-now` takes a plain "go ahead" rather than a typed phrase, so the safeguard lives in
+the order of events: the approval must follow the terms sheet in a later turn, the total
+is re-read immediately before the click, and if it differs from what was presented the
+agent stops and re-presents. One approval is one order.
 
 ## Developing on this plugin
 

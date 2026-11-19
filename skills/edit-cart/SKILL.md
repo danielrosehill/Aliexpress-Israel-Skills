@@ -1,6 +1,6 @@
 ---
 name: edit-cart
-description: Edit the signed-in AliExpress cart in place - remove a line, change a line's quantity, or tick/untick lines for checkout - and prove each change by diffing the cart. Use on "remove X from my cart", "make it 3", "untick the case", "only check out the board".
+description: Edit the signed-in AliExpress cart in place - remove from cart, change a line's quantity, or tick/untick lines for checkout - and prove each change by diffing the cart. Use on "remove from cart", "remove X from my cart", "delete that line", "make it 3", "untick the case", "only check out the board".
 ---
 
 # Edit AliExpress Cart

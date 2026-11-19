@@ -555,6 +555,20 @@ Verified in the signed-in EN/USD cart with `element.click()` via `javascript_too
 - The cart is shared live with other sessions: another agent's lines can appear between your
   snapshots. Diff only the `cartId`s you touched.
 
+### Cart total read  (V 2026-11-19)
+
+- `.cart-summary` `innerText` (EN/USD) reads `Summary`, then label/value pairs `Items total`,
+  `Items discount` (`- US $x`), `Subtotal`, `Shipping` (`Free` or an amount), `Extra discounts`,
+  `Estimated total`, then `Checkout (N)`. Badge strings (`Only 8 left`, `Almost sold out`, trailing
+  `Almost sold out!`) interleave: read each value as the next non-empty line after its label.
+- Per line, page state `fields`: `priceViews[]` (`priceType` `showPrice` = unit, `crossedPrice` = list;
+  `.formattedAmount`, `.value`), `quantityView.current/max/lowStockTip`, `shopView.name/sellerId`,
+  `checkbox.selected`, `itemView.{itemId,cartId,skuId,title,detailUrl}`.
+- DOM per `.cart-product`: `[class*="cart-product-ship-freight"]` (text `Free shipping` or a fee),
+  `[class*="cart-product-sku"]` (SKU text; empty for default-SKU lines), `[class*="cart-product-shop-name"]`.
+- `Items total` sums crossed prices, `Subtotal` sums unit prices, `Estimated total` = `Subtotal` -
+  `Extra discounts` (+ shipping).
+
 Line order is **newest-first**: the most recently added item is `.cart-product[0]`.
 Identify a line by title or SKU, never by index.
 

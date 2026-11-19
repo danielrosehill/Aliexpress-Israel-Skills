@@ -55,6 +55,18 @@ touched. Sequence, each step confirmed by a before/after page-state diff: qty 1 
 `reference/selectors.md` -> "Cart edits - live behaviour". Not exercised: group and select-all
 checkboxes, `div.cart-header-delete-btn` (batch delete), the modal's `Cancel`.
 
+### Cart total read (`cart-total`, 2026-11-19)
+
+Read-only run in an own tab against the live two-line cart (both ticked), nothing clicked. The
+`edit-cart` `snap()` source gives lines; `priceViews[]` carries `showPrice` (unit) and `crossedPrice`
+(list); `shopView.name` is the seller; `quantityView.current` / `.max` / `.lowStockTip` the qty.
+`itemView.sku.skuInfo` can be empty while the DOM shows the SKU text, so SKU comes from
+`[class*="cart-product-sku"]` first (a line with the default SKU has no SKU text). Reconciliation held:
+`Items total` = sum of crossed prices, `Subtotal` = sum of unit prices, `Estimated total` = Subtotal minus
+`Extra discounts` (shipping Free). Summary text interleaves badge strings, so read by label. Some
+sandbox outputs of `javascript_tool` return `[BLOCKED: Cookie/query string data]` for fields such as
+`logisticsView` and `itemView.sku` (tool output filter, not an empty value): read shipping from the DOM.
+
 ## Live captures worth knowing (2026-09-03)
 
 Selector-level detail lives in `reference/selectors.md`. These are the findings that
@@ -101,8 +113,9 @@ On SKU A the summary read: subtotal $1.44, shipping $1.99, **Bonus −$3.43, tot
 $0.00**. A zero total is not evidence that nothing is being spent — it means a
 platform credit is being consumed. `buy-now`'s terms sheet must state the credit
 applied, not just the total, or the user cannot tell a free order from a spent
-balance. The confirmation phrase binding to `0.00` is technically correct and
-practically useless, so name the credit explicitly.
+balance. An approval of "a $0.00 order" is uninformed, so name the credit and the
+pre-credit subtotal explicitly (the typed-phrase gate was relaxed to a plain
+human-in-the-loop affirmative in v1.12.0, 2026-11-19).
 
 ### Variant labels are not unique
 
