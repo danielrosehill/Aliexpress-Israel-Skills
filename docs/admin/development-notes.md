@@ -221,6 +221,25 @@ The order total was $0.00 against a $3.43 platform credit, which is exactly the 
 the terms sheet exists for: nothing was charged to a card, but $3.43 of stored balance
 was consumed. Presenting only "total: $0.00" would have been true and useless.
 
+## Order recording (`record-order`, 2026-11-19)
+
+- Validated read-only in Chrome, own tab, on one real paid order. Orders list gave
+  status, `Ref. Number`, store and total; for that order the list showed **no item
+  titles** (image links only), so items come from the Details page.
+- Details page body text carries `Order placed on`, `Paid on`, `Payment method:
+  Credit/Debit card` (**no card digits**), per-item title / SKU line / `US $x` `x<qty>`,
+  Subtotal and Total (Total can be below Subtotal after coins), and the ship-to block.
+  Only the city is logged.
+- `buy-now` learned the same day: slider CAPTCHA after `Pay now` (user clears it); an
+  order exists from the first `Pay now`, retry via the order's own Pay now in the `To pay`
+  tab; payment-method modal iframe `second-payment/index.html` needs the
+  `label.comet-radio` click; 3-D Secure may need app approval (agent waits); success is
+  `Payment Successful` then `Verifying your payment`. These were observed during a live
+  purchase and recorded in `skills/buy-now/SKILL.md`; the iframe and 3-D Secure details
+  were not re-driven in the read-only validation.
+- Log path is overlay-only (`orders_log` / `$CLAUDE_USER_DATA` / `~/.claude-user-data`),
+  following the `export-cart` convention.
+
 ## Still open
 
 - **Batch delete is mapped but undriven.** `div.cart-header-delete-btn` and the

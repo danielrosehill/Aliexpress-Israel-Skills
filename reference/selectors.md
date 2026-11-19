@@ -718,6 +718,20 @@ Post-cancellation the status block reads `Canceled` +
 
 ---
 
+## Order list and detail, re-read for `record-order`  (V 2026-11-19)
+
+- Orders list: each order is `.order-item`; status in `.order-item-header-status-text`
+  (observed `Processing`); text includes `Date:`, `Ref. Number: <16 digits>`, store and
+  `Total:US $x`. A `Details` link goes to `/p/order/detail.html?orderId=<ref>`.
+  Tabs are labelled `To pay (n)`, `Processing (n)`, `Processed (n)`.
+  An order's item rows can be missing from list text (image-only links).
+- Detail page: status in `.order-status` (`Processing` + "Order will ship in N days");
+  body text has `Ref. Number:`, `Order placed on:`, `Paid on:`, `Payment method:
+  Credit/Debit card` (no last4), per-item title / SKU / price `x<qty>`, `Subtotal`, `Total`.
+  Needs ~6 s to hydrate.
+
+---
+
 ## Verification log
 
 | Date | Fixture | Session | Result |
@@ -727,3 +741,4 @@ Post-cancellation the status block reads `Canceled` +
 | 2026-09-04 | items `1005012170805147`, `1005012995479364`; populated cart; cart-route confirm page | EN/USD, signed in, Chrome | **Root-caused the open `add-to-cart` defect**: not a selector fault but a coordinate-space mismatch (page 2133×1003 vs screenshot 1425×712) that makes `computer` `ref` clicks land on the wrong element — `ref` click 0 requests, `element.click()` 17. Cart populated for the first time, unblocking the whole cart map: quantity stepper (`aria-label` decrease/number/increase), per-line trash, remove-confirm modal, select-all/group/line checkbox scopes, `div.cart-header-delete-btn`. Corrected two premises: `Checkout (N)` counts lines not units, and the cart badge is an unreliable `...` placeholder. `read-confirm-page.js` validated live. | Order placed end to end and the post-purchase surface mapped for the first time: pay-result page (`pmntId`, no order id, opens a new tab), orders list (`.order-item`, `Ref. Number:`), order detail (`orderId` param, `Cancel` label, status-dependent action row). |
 | 2026-09-01 | `USB-C cable` search, `he.aliexpress.com` | EN/USD, signed in, Chrome | 5 confirmed V · 1 genuine break (card price → replaced with innerText parse) · 1 inconclusive (`PremiumQuality`) · locale premise disproved · staged-hydration gate added. Product page (delivery panel, spec table, review chips) **not yet probed** — still `U`. |
 | 2026-09-03 | items `1005012170805147`, `1005012995479364`; cart page; confirm page | EN/USD, signed in, Chrome | Write paths captured live and promoted `U` → `V`: product CTA row (unhashed `add-to-cart` / `buy-now` prefixes), quantity stepper, variant grid incl. `sku-item--selected--`, cart empty state and `Checkout (N)`, confirm page incl. the `Pay now` label correction and the constructible confirm URL. Two premises corrected: the final button is not "Place order", and variant labels are not unique. **Still uncaptured:** per-line remove, select-all, batch delete — cart could not be populated (see open defects). |
+| 2026-11-19 | one real paid order (orders list + detail) | EN/USD, signed in, Chrome, own tab | `record-order` read-only run: list fields and detail fields above confirmed; no card digits on the page. |

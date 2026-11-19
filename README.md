@@ -109,7 +109,14 @@ Finding the thing in the first place: `search-aliexpress`, `search-by-synonyms`,
   (items, shipping, VAT, payment method, total), the turn ends, and a clear "go ahead"
   in the next reply is the approval. The total is re-read before the click and
   re-presented if it moved. Never touches a payment credential, an OTP or 3-D Secure.
-  Tier 3.
+  Tier 3. Its last step runs `record-order`.
+- `record-order` — read a placed order (ref number or "latest") from the Orders list and
+  Details page and upsert one JSON line per `order_ref` into your purchase log. Tier 1,
+  read-only on the site. The log lives in your user-data overlay, never in this repo:
+  `orders_log` in `<overlay>/aliexpress-israel-skills/config.json`, else
+  `$CLAUDE_USER_DATA/aliexpress-israel-skills/orders.jsonl`, else
+  `~/.claude-user-data/aliexpress-israel-skills/orders.jsonl`. Point `orders_log` at a
+  private repo if you want the log versioned.
 
 **Locale**
 
@@ -133,7 +140,7 @@ consequence. Full text in [`reference/browser.md`](reference/browser.md).
 
 | Tier | Consequence | Skills | Gate |
 |---|---|---|---|
-| 1 | reads only | everything else, incl. `export-cart` and `open-checkout` | none |
+| 1 | reads only | everything else, incl. `export-cart`, `open-checkout` and `record-order` | none |
 | 2 | reversible, no money | `add-to-cart`, `edit-cart` | act on a clear instruction |
 | 3 | **spends money** | `buy-now` | terms presented, turn ended, clear affirmative in a later turn; total re-read before the click |
 

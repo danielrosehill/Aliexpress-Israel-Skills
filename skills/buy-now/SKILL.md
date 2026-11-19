@@ -94,7 +94,26 @@ that is not authorization to spend. Ask.
    ```
 
    **Click once.**
-9. Read the outcome and report it (below).
+9. Read the outcome and report it (below). Handle what follows the click:
+   - **Slider CAPTCHA after "Pay now"** (observed 2026-11-19): it is the user's to clear.
+     Hand back and wait. Never retry the click.
+   - **Order exists from the first Pay now**, even if payment stalls. To retry payment
+     go to the Orders page, `To pay` tab, and use **that order's own "Pay now"**.
+     Never start a new checkout, which makes a second order.
+   - The order-list Pay now opens a payment-method modal inside iframe
+     `second-payment/index.html`. The saved-card radio must be selected by clicking its
+     `label.comet-radio` and verified with `input.comet-radio-input.checked`. This only
+     selects an already-saved method; never type card data.
+   - **Issuer 3-D Secure** (e.g. a Cardinal StepUp page) may need out-of-band approval
+     in the cardholder's banking app. The agent waits and verifies the order status;
+     it never approves. After a decline the Cardinal page says the transaction was
+     declined and the order stays `To pay`.
+   - **Success** shows the pay-result page `Payment Successful`, and the order moves to
+     `Verifying your payment` on the Orders page.
+10. **Record the order.** Once the orders page shows the order out of `To pay`
+    (confirmed payment, not just the pay-result page), run `record-order` for that
+    order ref and include the log line it wrote in the report. If the order is still
+    `To pay`, do not record as paid; say so.
 
 ## The terms sheet — present all of it
 
@@ -184,6 +203,7 @@ On success:
   seller:     <store>
   shipping:   <method>, est. <date range>
   tracking:   <available later | number if shown>
+  logged to:  <orders.jsonl path>  (via record-order)
 
 Import: <VAT already collected at checkout | expect ~$<vat> VAT on arrival —
         goods $<g> is over the $75 line>
@@ -235,3 +255,4 @@ On abort, say which stage stopped it and that nothing was ordered.
 7. No payment credential, OTP or 3-D Secure step was touched.
 8. On an unreadable outcome, the orders page was checked and **no retry was made**.
 9. The report states the order id, or states plainly that nothing was ordered.
+10. After confirmed payment, `record-order` ran and the written log line was reported.
