@@ -156,7 +156,7 @@ is usually the basket total.
 ## Out of scope
 
 - **Removing lines, changing the quantity of an existing line, ticking/unticking.**
-  Not implemented. Tell the user what to click.
+  Use `edit-cart`.
 - **Checkout, order placement, payment.** `open-checkout` reads the checkout page;
   `buy-now` places an order behind a confirmation gate. Neither is this skill.
 - **Coupons and promo codes.** Applied at checkout, not on add.

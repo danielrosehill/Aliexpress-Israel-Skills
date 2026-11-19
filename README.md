@@ -95,6 +95,9 @@ Finding the thing in the first place: `search-aliexpress`, `search-by-synonyms`,
 - `add-to-cart` — add one listing, one SKU, one quantity to the real cart, then prove
   it landed by **diffing the cart** rather than trusting the success toast. Tier 2:
   reversible, no money.
+- `edit-cart` — remove a line, change a line's quantity, or tick/untick lines for
+  checkout, each proven by a cart diff. Tier 2; confirms before touching lines you
+  did not name.
 - `open-checkout` — open the order-confirmation page and read the *committed* numbers:
   the shipping lane actually selected, coupons that only apply at checkout, and
   whether AliExpress collects Israeli VAT there. Reconciles against the estimate and
@@ -126,7 +129,7 @@ consequence. Full text in [`reference/browser.md`](reference/browser.md).
 | Tier | Consequence | Skills | Gate |
 |---|---|---|---|
 | 1 | reads only | everything else, incl. `export-cart` and `open-checkout` | none |
-| 2 | reversible, no money | `add-to-cart` | act on a clear instruction |
+| 2 | reversible, no money | `add-to-cart`, `edit-cart` | act on a clear instruction |
 | 3 | **spends money** | `buy-now` | terms presented, turn ended, exact confirmation phrase |
 
 Three rules apply to tiers 2 and 3 and are the reason they are safe to ship on

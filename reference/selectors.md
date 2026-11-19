@@ -533,6 +533,28 @@ one line from qty 1 → 2 moved the subtotal $1.44 → $2.88 and left both label
 loading placeholder that does not always resolve. **Never gate on the badge.** Read
 `Cart (N)` or diff `.cart-product` elements.
 
+### Cart edits - live behaviour  (V 2026-11-19)
+
+Verified in the signed-in EN/USD cart with `element.click()` via `javascript_tool`; skill `edit-cart`.
+
+- **Quantity:** `[aria-label="increase"]` / `[aria-label="decrease"]` change the line in page state
+  and `Subtotal` within ~2.5 s, no reload. Setting `input[aria-label="number"]` works only via the
+  native `HTMLInputElement.prototype.value` setter, then `input` + `change` events, then `blur()`
+  (1 -> 3 -> 1 confirmed). A plain `inp.value = '3'` is not committed.
+- **Tick/untick one line:** `.cart-product-body input.comet-v2-checkbox-input`, `.click()` on the
+  **input**. The `aria-label` (`unselect product`) is on the input, not on the `label`. The state is
+  server-side: an unticked line was still unticked after a full reload. `Checkout (N)` and `Subtotal`
+  follow ticked lines only; `Cart (N)` keeps counting all lines. **This corrects the line above:**
+  `Checkout (N)` counts *ticked lines* (it equalled `Cart (N)` earlier only because every line was ticked).
+- **Remove:** `[aria-label="delete product"]` inside the line, then `Remove` in
+  `.comet-v2-modal-wrap .comet-v2-modal-footer`. The modal closed, the `.cart-product` element
+  vanished and `Checkout (N)`/`Subtotal` updated immediately, but **`Cart (N)` stayed stale** and
+  page state kept a ghost node (same `cartId`, `itemId: null`, `selected: false`). Filter
+  `itemId` truthy, and reload for the authoritative read. The removed line stayed gone after reload.
+- A line re-added later appears with a **new `cartId`** and at the top (newest-first).
+- The cart is shared live with other sessions: another agent's lines can appear between your
+  snapshots. Diff only the `cartId`s you touched.
+
 Line order is **newest-first**: the most recently added item is `.cart-product[0]`.
 Identify a line by title or SKU, never by index.
 
@@ -687,6 +709,7 @@ Post-cancellation the status block reads `Canceled` +
 | Date | Fixture | Session | Result |
 |---|---|---|---|
 | 2026-10-26 | `8BitDo SN30 Pro`, `8BitDo Lite 2` searches (Choice); items 1005006458599504, 1005007345086449 | HE/ILS anonymous, then EN/USD signed in; persistent agent browser (Playwright over CDP) | Card parse moved to `.search-item-card-wrapper-gallery` + leaf `textContent` (`scripts/search-cards.js`). **Chip click updated URL without re-rendering**: navigate the URL instead. Bundle cards identified by `BundleDeals2` links. No delivery-time switch on IL. Delivery row, Fast-delivery badge, listing price and SKU grid captured (`scripts/listing-probe.js`). Locale cookies proven JS-readable and writable (`browser.md` corrected). First listing load anonymous hit reCAPTCHA. |
+| 2026-11-19 | item `1005012170805147` (SKU A, as fixture); populated cart | EN/USD, signed in, Chrome | Cart edits validated live: qty stepper and input (native setter + blur), per-line tick/untick (persists on reload), remove via modal (ghost node, stale `Cart (N)`). `Checkout (N)` corrected: counts ticked lines. |
 | 2026-09-04 | items `1005012170805147`, `1005012995479364`; populated cart; cart-route confirm page | EN/USD, signed in, Chrome | **Root-caused the open `add-to-cart` defect**: not a selector fault but a coordinate-space mismatch (page 2133×1003 vs screenshot 1425×712) that makes `computer` `ref` clicks land on the wrong element — `ref` click 0 requests, `element.click()` 17. Cart populated for the first time, unblocking the whole cart map: quantity stepper (`aria-label` decrease/number/increase), per-line trash, remove-confirm modal, select-all/group/line checkbox scopes, `div.cart-header-delete-btn`. Corrected two premises: `Checkout (N)` counts lines not units, and the cart badge is an unreliable `...` placeholder. `read-confirm-page.js` validated live. | Order placed end to end and the post-purchase surface mapped for the first time: pay-result page (`pmntId`, no order id, opens a new tab), orders list (`.order-item`, `Ref. Number:`), order detail (`orderId` param, `Cancel` label, status-dependent action row). |
 | 2026-09-01 | `USB-C cable` search, `he.aliexpress.com` | EN/USD, signed in, Chrome | 5 confirmed V · 1 genuine break (card price → replaced with innerText parse) · 1 inconclusive (`PremiumQuality`) · locale premise disproved · staged-hydration gate added. Product page (delivery panel, spec table, review chips) **not yet probed** — still `U`. |
 | 2026-09-03 | items `1005012170805147`, `1005012995479364`; cart page; confirm page | EN/USD, signed in, Chrome | Write paths captured live and promoted `U` → `V`: product CTA row (unhashed `add-to-cart` / `buy-now` prefixes), quantity stepper, variant grid incl. `sku-item--selected--`, cart empty state and `Checkout (N)`, confirm page incl. the `Pay now` label correction and the constructible confirm URL. Two premises corrected: the final button is not "Place order", and variant labels are not unique. **Still uncaptured:** per-line remove, select-all, batch delete — cart could not be populated (see open defects). |

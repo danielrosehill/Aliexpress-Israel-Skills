@@ -130,7 +130,7 @@ own SKILL.md claims.
 | Tier | What it does | Skills | Rule |
 |---|---|---|---|
 | **1 — read** | Reads pages, reviews, cart, prices | everything else | No gate. Default. |
-| **2 — reversible write** | Mutates state the user can undo in one click, no money | `add-to-cart` | Act on a clear instruction. Verify the effect, not the click. |
+| **2 — reversible write** | Mutates state the user can undo in one click, no money | `add-to-cart`, `edit-cart` | Act on a clear instruction. Verify the effect, not the click. |
 | **3 — money** | Places a real order | `buy-now` | Two-stage gate: present terms, end the turn, require an exact confirmation phrase bound to the total. |
 
 `open-checkout` is tier 1 despite its name: it reads the confirmation page and stops.

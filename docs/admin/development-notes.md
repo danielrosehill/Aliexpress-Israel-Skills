@@ -33,7 +33,7 @@ query. Do not swap these out casually.
 | Fixture | Value | Used by |
 |---|---|---|
 | Search query | `USB-C cable` | `selector-verification` — search page, filter chips, cards |
-| Write-path test SKU A | item `1005012170805147`, sku `12000057692892678` (`skuAttr=14:193#black`) — dual-tip marker pens, US $1.44, Choice, seller Shop1105409239 | `add-to-cart`, `open-checkout`, `buy-now` |
+| Write-path test SKU A | item `1005012170805147`, sku `12000057692892678` (`skuAttr=14:193#black`) — dual-tip marker pens, US $1.44, Choice, seller Shop1105409239 | `add-to-cart`, `edit-cart`, `open-checkout`, `buy-now` |
 | Write-path test SKU B | item `1005012995479364` — Claude Code mascot keychain, US $3.41 | quantity stepper, multi-line cart, removal |
 
 Recorded 2026-09-03 at the user's direction. SKU A is deliberately cheap and its
@@ -43,6 +43,17 @@ are far under the $75 de-minimis, so a test order carries no tax consequence.
 **Prices and stock on the fixtures will drift.** SKU A showed "Only 7 left". When a
 fixture goes out of stock, replace it and update this table with the date — a
 sold-out fixture produces failures that look like selector rot.
+
+### Cart-edit validation (`edit-cart`, 2026-11-19)
+
+Run on fixture SKU A (default SKU selected, US $1.34 that day; added with `add-to-cart`, cartId
+`11004578823861`) while the real cart held two lines the user wanted to keep, which were never
+touched. Sequence, each step confirmed by a before/after page-state diff: qty 1 -> 2 (stepper
+`increase`), 2 -> 1 (`decrease`), 1 -> 3 (input, native setter + blur), 3 -> 1; untick (`Checkout (3)` ->
+`(2)`, Subtotal fell by the line price), reload (still unticked), re-tick; remove via modal, reload
+(line gone, other lines intact). Fixture B (keychain) was not needed. Gotchas are in
+`reference/selectors.md` -> "Cart edits - live behaviour". Not exercised: group and select-all
+checkboxes, `div.cart-header-delete-btn` (batch delete), the modal's `Cancel`.
 
 ## Live captures worth knowing (2026-09-03)
 
