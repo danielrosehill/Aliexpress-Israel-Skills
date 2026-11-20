@@ -219,10 +219,10 @@ reverse-engineering write-up lives in the private `Aliexpress-Cart-Analysis` rep
 > delete, multi-line cart and checkout are all verified live — see the 2026-09-04 row
 > in [`reference/selectors.md`](reference/selectors.md).
 
-- **`fetch-listing` Route B is not implemented.** The headless-scraper route
-  documents a `scripts/ali-fetch.mjs` that does not exist in this repo. Route A
-  (Chrome) works; the skill says so explicitly rather than pointing you at a missing
-  file.
+- **`fetch-listing` Route B is unverified.** `scripts/ali-fetch/ali-fetch.mjs` (Puppeteer
+  scraper) came over from the israel-shopping plugin on 2026-11-20; last known run
+  2026-04-25. `fetch-listing-api` (official Affiliate API, needs app keys) came with it.
+  Route A (Chrome) remains the default.
 - **Delivery-panel and spec-table selectors are still uncaptured** (`U` in
   `reference/selectors.md`). The 2026-09-01 verification run covered the search page
   only; the product page has not been probed. `ship-options-il` and
@@ -260,3 +260,13 @@ claude plugins install aliexpress-israel-skills@danielrosehill
 ## License
 
 MIT © Daniel Rosehill
+
+## History
+
+- 2026-11-20: absorbed the AliExpress parts of the `israel-shopping` plugin
+  (danielrosehill/Claude-Israel-Shopping-Plugin): the Puppeteer scraper
+  (`scripts/ali-fetch/`), the `fetch-listing-api` skill (official Affiliate API) and the
+  2026-04 UI/cookie research notes (`docs/research/`). Its duplicate `search-aliexpress`,
+  `fetch-listing`, `free-shipping-only`, `il-reviews-show` and `exclude-combo-deals`
+  were removed there in favour of this plugin's versions. `israel-shopping` keeps
+  `compare-to-local` and calls this plugin from its `find-product` skill.

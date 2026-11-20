@@ -48,12 +48,20 @@ three days later is not the figure at checkout.
 
 ## Route B — headless scraper (batch / unattended)
 
-⚠️ **The script this route needs is not currently in the repository.** Earlier
-revisions of this skill documented `scripts/ali-fetch.mjs`, a `package.json` and an
-`npm install` step; none of those files exist here. Do not tell the user to run it.
-Until it is written, Route A is the only working route.
+The script is `scripts/ali-fetch/ali-fetch.mjs` (moved here from the israel-shopping
+plugin on 2026-11-20, where it was last run on 2026-04-25; **not re-verified since**,
+so treat a first run as a probe). Setup and run:
 
-If Route B is rebuilt, the design that was documented for it:
+```
+cd scripts/ali-fetch && npm install        # Node >= 24; pulls Puppeteer + Chromium
+node ali-fetch.mjs <productId|url> [outDir]
+```
+
+If it fails or returns an empty title, use Route A, or `fetch-listing-api` (official
+Affiliate API: thinner data, needs app keys in
+`~/.claude-user-data/aliexpress-israel-skills/config.json`).
+
+Design notes for Route B:
 
 - `aliexpress-product-scraper` + Puppeteer on Node ≥ 24
 - writes `listing-<id>.json`; caches USD/ILS in `.fx-cache.json` (24h TTL)

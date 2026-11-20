@@ -1,0 +1,13 @@
+{
+  "name": "fetch-listing",
+  "version": "1.0.0",
+  "description": "Fetches an AliExpress listing as structured JSON via aliexpress-product-scraper (Puppeteer).",
+  "type": "module",
+  "main": "ali-fetch.mjs",
+  "dependencies": {
+    "aliexpress-product-scraper": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
