@@ -65,7 +65,7 @@ shape in anything new.
 
 `reference/browser.md` defines three tiers: read, reversible write, and money. A skill
 acts only at the tier its own SKILL.md claims. Tier 3 (`buy-now`) requires terms
-presented, the turn ended, and a clear affirmative from the user in a later turn (total re-read before the click).
+presented (as a short approval menu: Place order / Look for other options / Cancel), the turn ended, and a clear affirmative from the user in a later turn (total re-read before the click).
 Authorization is per action and never accumulates.
 
 ## 5. Where findings go

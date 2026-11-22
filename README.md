@@ -105,9 +105,11 @@ Finding the thing in the first place: `search-aliexpress`, `search-by-synonyms`,
   the shipping lane actually selected, coupons that only apply at checkout, and
   whether AliExpress collects Israeli VAT there. Reconciles against the estimate and
   **stops** — nothing is ordered.
-- `buy-now` — place one real order with a human in the loop: terms presented in full
-  (items, shipping, VAT, payment method, total), the turn ends, and a clear "go ahead"
-  in the next reply is the approval. The total is re-read before the click and
+- `buy-now` — place one real order with a human in the loop: a one-line terms summary
+  (item, SKU, seller, total with shipping, card, delivery window, VAT position) asked
+  as a menu (**Place order** / **Look for other options** / **Cancel**), with the full
+  terms sheet only for unusual orders (over $75, credit used, tax collected, partial
+  cart, several lines). Choosing Place order, or a clear "go ahead", is the approval. The total is re-read before the click and
   re-presented if it moved. Never touches a payment credential, an OTP or 3-D Secure.
   Tier 3. Its last step runs `record-order`.
 - `record-order` — read a placed order (ref number or "latest") from the Orders list and
@@ -156,8 +158,8 @@ unverified selectors:
 - **Authorization does not accumulate.** Approval to add is not approval to check out;
   one order confirmed is not the next one confirmed.
 
-`buy-now` takes a plain "go ahead" rather than a typed phrase, so the safeguard lives in
-the order of events: the approval must follow the terms sheet in a later turn, the total
+`buy-now` takes a menu choice or a plain "go ahead" rather than a typed phrase, so the
+safeguard lives in the order of events: the approval must follow the terms in a later turn, the total
 is re-read immediately before the click, and if it differs from what was presented the
 agent stops and re-presents. One approval is one order.
 
@@ -236,9 +238,10 @@ reverse-engineering write-up lives in the private `Aliexpress-Cart-Analysis` rep
   three checkbox scopes share `aria-label="unselect product"`; only the per-line one
   has been clicked. `div.cart-header-delete-btn` (batch delete) is likewise mapped but
   undriven, and its confirmation modal may differ from the single-line one.
-- **`buy-now` has not been walked to completion.** The gate and terms sheet are
-  specified and the confirm page reads correctly; the final `Pay now` click has never
-  been made.
+- **`buy-now` has been walked to completion once** (2026-11-23: single-item Buy now
+  path, saved card, no captcha or 3-D Secure, order confirmed by the user). The cart
+  path (`source=cart`) and a 3-D Secure / captcha interruption have not yet been
+  completed live.
 - **No local-retailer price comparison.** Deliberate — "is this cheaper than buying
   it in Israel" lives in the separate `israel-shopping` collection alongside the Zap
   comparison skills.

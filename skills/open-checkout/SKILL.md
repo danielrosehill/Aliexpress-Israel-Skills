@@ -30,7 +30,7 @@ estimate and the committed figure, with the divergence explained.
 ## When to use
 
 - "What will this actually cost me?" on a real cart
-- Before `buy-now` — it supplies the terms sheet that skill presents
+- Before `buy-now` — it supplies the terms that skill's approval menu presents
 - To settle whether VAT is collected at checkout or left to be assessed on import
 - After `cart-vat-nudge` returns AMBER or RED, to check the real number against the
   $75 line
