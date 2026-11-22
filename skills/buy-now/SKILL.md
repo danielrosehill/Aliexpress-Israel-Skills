@@ -34,7 +34,10 @@ that is not authorization to spend. Ask.
 
 ## Preconditions — any failure is a stop, not a workaround
 
-1. Signed in; locale verified (`₪` read from the page); ship-to IL.
+1. Signed in; locale verified (the session currency glyph read from the page and
+   matching the user's `set-locale` preference, default EN/USD); ship-to IL. The `₪`
+   in the templates below stands for the session currency; in an EN/USD session write
+   `US $` and give the ₪ figure as the approximation instead.
 2. A **saved delivery address** and a **saved payment method** already on the account.
    This skill does not create either.
 3. The confirmation page reachable and fully settled.
@@ -79,7 +82,10 @@ that is not authorization to spend. Ask.
    ⚠️ **A `0.00` total** means a credit was consumed, not that the order is free. Name
    the credit and the pre-credit subtotal in the terms sheet so the approval is informed.
 
-7. **Re-read the total immediately before the click.** If it differs from what was
+7. **Re-read the total immediately before the click**, and on the single-item path
+   assert the confirm URL still carries the presented `skuId` and `quantity` (both are
+   query parameters of `/p/trade/confirm.html`). Do the re-read, the assertion and the
+   click in one `javascript_tool` call so nothing can change in between. If it differs from what was
    presented, the approval is void: report the change and restart at Stage 1 with the
    new figures.
 8. Click the final CTA — **labelled `Pay now`, not "Place order"** (the page's own
@@ -108,8 +114,12 @@ that is not authorization to spend. Ask.
      in the cardholder's banking app. The agent waits and verifies the order status;
      it never approves. After a decline the Cardinal page says the transaction was
      declined and the order stays `To pay`.
-   - **Success** shows the pay-result page `Payment Successful`, and the order moves to
-     `Verifying your payment` on the Orders page.
+   - **Success** shows the pay-result page `Payment Successful`
+     (`/p/second-payment/pay-result.html?pmntId=…`), and the order moves to
+     `Verifying your payment` or straight to `Processing` on the Orders page.
+     Verified 2026-11-23: single-item Buy now path, EN/USD, saved card, one `Pay now`
+     DOM click → pay-result in ~8 s, no captcha, no 3-D Secure, order listed as
+     `Processing` with the right SKU line and total; the user confirmed it on their side.
 10. **Record the order.** Once the orders page shows the order out of `To pay`
     (confirmed payment, not just the pay-result page), run `record-order` for that
     order ref and include the log line it wrote in the report. If the order is still

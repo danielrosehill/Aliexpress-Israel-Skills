@@ -52,7 +52,16 @@ So: **never report a card price as what something costs.** Resolve it.
 5. `price_gap_pct` = (true_price − card_price) / card_price × 100. Flag
    **ANCHORED** when ≥ 10%: the card price belonged to a cheaper non-target SKU or a
    promo the user won't get.
-6. Note one-time prices: new-buyer deals ("New shoppers save…") show on cards and
+6. **Multi-pack listings: price every pack size for the target, not just one.** Pack
+   tiers are often not monotonic, and one seller often runs several near-duplicate
+   listings of the same product at different prices. Verified 2026-11-23 (OnePlus
+   Nord 3 anti-peep glass, one seller, three listings): 4-pack $8.91 cost *less* than
+   the 3-pack ($8.92) on one listing; the 5-pack was $14.14, $15.29 and $16.31 across
+   the three listings. Pin the non-pack axes (model, material) first, then step
+   through the pack axis, and rank on per-unit price and on total including the
+   shipping fee from `open-checkout` (a pack under the free-shipping line can lose to
+   the next one up).
+7. Note one-time prices: new-buyer deals ("New shoppers save…") show on cards and
    don't apply to an established account.
 
 Delivery per SKU comes from the same probe. If the matching SKUs differ in delivery,

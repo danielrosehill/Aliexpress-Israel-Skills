@@ -42,8 +42,9 @@ repo or under `~/.claude` (Claude Code's own state).
    `document.body.innerText`: `Order placed on`, `Paid on`, `Payment method`, store,
    per-item title / SKU line / `US $x` + `x<qty>`, Subtotal, Total, and the ship-to
    block (record the **city only**; never the name, phone or street).
-   The list view can show no item titles (images only), so the Details page is the
-   source for items.
+   The list view sometimes shows no item titles (images only); on 2026-11-23 it did
+   show title, SKU line, unit price and total. Use the Details page as the source for
+   items whenever the list lacks them.
 4. Build one JSON object:
    `order_ref, placed_date (YYYY-MM-DD), recorded_at (ISO with offset), status, store,
    items [{title, sku, qty, unit_price}], total, currency, payment_card_last4,

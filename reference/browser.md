@@ -119,6 +119,11 @@ decide the language.
   See the gate in `selectors.md`.
 - **A captcha or risk challenge is a stop, not a retry loop.** Report it and hand
   back to the user; retrying from the same session makes it worse.
+- **Never return a URL with a query string from `javascript_tool`.** Claude-in-Chrome
+  replaces the whole result with `[BLOCKED: Cookie/query string data]` (seen
+  2026-11-23 returning `location.href` and card `href`s). Return item ids, paths or
+  booleans like `/skuId=123/.test(location.href)`; the tab context line already shows
+  the current URL.
 - **Read by default; write only where the skill says so.** See the ladder below.
 
 ## Write actions — the escalation ladder

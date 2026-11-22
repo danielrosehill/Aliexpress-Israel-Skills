@@ -37,7 +37,8 @@ estimate and the committed figure, with the divergence explained.
 
 ## Preconditions
 
-- Signed in, locale verified (`₪` read, not assumed), ship-to IL — see
+- Signed in, locale verified (session currency glyph read, not assumed, and matching
+  the `set-locale` preference, default EN/USD), ship-to IL — see
   `$CLAUDE_PLUGIN_ROOT/reference/browser.md`
 - A **delivery address is already saved** on the account. Checkout with no address
   lands on an address form instead of the confirm page. This skill does **not** fill
@@ -70,6 +71,14 @@ estimate and the committed figure, with the divergence explained.
    directly** from `objectId` + `skuId` + `quantity` (shape in
    `reference/selectors.md`) — the more durable route, since it needs no CTA-row
    interaction at all. Only ever build that URL from an id the user named.
+   Reaching the confirm page this way creates **no order**: nothing exists until
+   `Pay now`. That makes it the way to read the real shipping fee for a SKU — the
+   listing page's `Free pick-up over US $12.00` is not free home delivery. Verified
+   2026-11-23: a US $8.91 Choice SKU showed `Free pick-up over US $12.00` on the
+   listing and was charged US $1.99 Cainiao standard shipping on the confirm page,
+   with an `Add US $3.09 for free shipping` nudge; a US $16.31 SKU from the same
+   seller showed free shipping. Report the fee and the nudge, so the user can choose
+   between paying shipping and adding a cheap line.
 4. Wait for the confirm page (`/p/trade/confirm.html`) to settle. It hydrates in
    stages like every other AliExpress page: the shipping block and the tax line arrive
    after the item rows. **Reading early yields a total that is missing tax and
