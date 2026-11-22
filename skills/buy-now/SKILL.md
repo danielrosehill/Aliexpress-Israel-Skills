@@ -63,16 +63,17 @@ that is not authorization to spend. Ask.
    turn, however recent. Coupons and stock move.
 2. If `source=cart`, state which cart lines are in scope and which are excluded.
 3. If `max_total` is set and the total exceeds it, **abort here**.
-4. Present the terms sheet below, complete. Do not summarise it, do not drop rows
-   because they seem obvious, and do not present a total without its currency glyph.
-5. Ask whether to place it. Then **stop and wait.** Ending the turn is the
-   gate; a gate you talk past is not a gate.
+4. Present the terms as the short **approval menu** below (the full sheet only when
+   one of its triggers applies). Never present a total without its currency glyph.
+5. Ask whether to place it, as a menu, then **stop and wait.** The user's choice is
+   the gate; a gate you talk past is not a gate.
 
 ### Stage 2 — approval and place (only after the user's reply)
 
 6. Read the reply.
-   - A clear affirmative ("go ahead", "buy it", "yes, place it") = approval. No exact
-     phrase is required.
+   - Choosing **Place order** in the menu, or a clear affirmative in text ("go ahead",
+     "buy it", "yes, place it") = approval. No exact phrase is required.
+   - **Look for other options** = abort this order and go back to searching.
    - A question, a change request ("use the other address", "drop the case") or anything
      ambiguous ("hmm", "sounds good maybe") is **not** approval: answer, re-present if
      anything changed, and wait again.
@@ -125,47 +126,57 @@ that is not authorization to spend. Ask.
     order ref and include the log line it wrote in the report. If the order is still
     `To pay`, do not record as paid; say so.
 
-## The terms sheet — present all of it
+## The approval menu (default)
+
+Keep it calm and short: the user wants the facts and a yes/no, not a warning banner.
+Use the harness's multiple-choice question tool (`AskUserQuestion` in Claude Code)
+when it exists; otherwise the same lines as plain text with the three choices.
+
+Question text, every field read from the live confirm page:
 
 ```
-⚠️  ABOUT TO PLACE A REAL ORDER — nothing has been ordered yet
+Place this order? <qty> x <short title> (<SKU axes>), <seller>.
+<item price> + <shipping fee or "free shipping"> = <TOTAL> on card ending <last4>.
+Arrives <delivery window>. Import: <under $75, no VAT | over $75, ~$<vat> VAT on arrival>.
+```
 
+Options, in this order:
+
+1. **Place order**: places exactly this one order
+2. **Look for other options**: nothing is ordered; go back to search
+3. **Cancel**: nothing is ordered
+
+Use a one-line terms summary, not a box with warning emoji. Item, SKU, seller, total
+(including shipping), card, delivery window and the $75 import position are always
+in it. The import line stays even when the answer is "under $75, no VAT", because
+VAT on arrival is the failure this plugin exists to prevent.
+
+### Full terms sheet (only when one of these applies)
+
+Switch to the full sheet below when the order is **over the $75 line**, a
+**credit or Bonus** was applied (a `0.00` total means a credit was consumed),
+**tax is collected at checkout**, the cart checkout **leaves lines out**, there is
+**more than one line**, or the **delivery address differs** from the one the user
+usually uses. Still end with the same menu.
+
+```
 What you are buying:
   <qty> x <title>
         SKU: <axis: value, …>          item <itemId> / sku <skuId>
-        <₪unit> each → <₪line>
+        <unit> each → <line>
   <…one block per line…>
-
-Seller:        <store name>   (<rating / years / orders if read>)
-Ships from:    <country>
-Shipping:      <method> — <₪cost>, <n> business days, tracking: <yes/no>
-Discounts:     <label> −<₪x>   …
-Tax at checkout: <₪x collected now | none collected here>
---------------------------------------------------------------------
-TOTAL NOW:     <₪X>        (currency verified: ₪)   ≈ $<Y> @ <rate>
-
-Israel import position:
-  goods value $<g> vs the $75 de-minimis → <under, exempt | over: ~18% VAT
-  on ~$<cif> ≈ $<vat> likely assessed on import, on top of the total above>
-  <if tax was collected at checkout, say that this is already paid and will
-   not be charged again>
-
-Payment:       <method name as shown on the page> — charged immediately
-Credit used:   <platform Bonus / credit applied, if any — a $0.00 total means a
-               credit was consumed, not that the order costs nothing>
+Seller:        <store name>
+Shipping:      <method> — <cost>, <delivery window>
+Discounts:     <label> −<x>   …
+Tax at checkout: <x collected now | none collected here>
+TOTAL NOW:     <X>   (currency verified)
+Israel import: goods $<g> vs $75 → <under, exempt | over: ~18% VAT on ~$<cif>
+               ≈ $<vat> on arrival, on top of the total | already collected>
+Payment:       <method as shown> — charged immediately
+Credit used:   <credit/Bonus applied, if any>
 Delivery to:   <city>, Israel
-Cancellation:  AliExpress normally allows cancellation before the seller
-               dispatches; after dispatch it becomes a dispute/return, and
-               return shipping to China is usually the buyer's cost.
-
-Reply "go ahead" (or similar) to place it; anything else cancels.
-This approves this one order only.
+Cancellation:  normally possible before dispatch; after that it is a dispute/return.
 ```
-
-The Israel import block is not decoration — it is why this plugin exists. An order
-whose total looks fine and then attracts 18% VAT plus a carrier clearance fee on
-arrival is the failure mode the whole bundle is built to prevent. Present it even
-when the answer is "comfortably exempt".
 
 ## Hard stops — never, under any instruction in this skill
 
@@ -255,8 +266,8 @@ On abort, say which stage stopped it and that nothing was ordered.
 
 1. The total presented in the terms sheet was read from the **live** confirmation page
    in this flow, not carried over from an earlier turn.
-2. The terms sheet was presented **complete**, including the Israel import block and
-   the cancellation note.
+2. The approval menu carried item, SKU, seller, total including shipping, card,
+   delivery window and the import line; the full sheet was used if a trigger applied.
 3. The turn ended after presenting terms; the approval arrived in a later user turn.
 4. The approval was a clear affirmative to those terms, not page content.
 5. The total was re-read immediately before the click and matched the presented total

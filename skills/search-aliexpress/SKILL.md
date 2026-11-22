@@ -88,6 +88,32 @@ on, every non-bundle card is Choice.
 an early read returns a fraction of the cards and none of the filter chips. Poll
 until the card count stops rising.
 
+## Niche models hide in multi-model listings
+
+Accessories for a less common model (a specific phone, say) are rarely sold under
+their own title. They are a **variant option** on a listing that covers the whole
+family, with a title that runs every model together ("For OnePlus Nord 5 3 4 6 N20
+N30 SE…"). Verified 2026-11-23: no listing was titled for the OnePlus Nord 3 alone,
+but `oneplus nord 3 privacy screen protector` returned four multi-model listings,
+three of which had `For OnePlus Nord 3` + `Anti Peeping` as SKU options.
+
+So for a niche model:
+
+- Search `<brand> <model> <product>`, then **open the top few multi-model
+  listings and check the model axis** for an exact option. Don't drop a card
+  because its title lists ten models; don't trust it either until the option is there.
+- Match the option label **exactly** (`For OnePlus Nord 3`, not `Nord 3T`,
+  `CE3` or `CE3 Lite`). Neighbouring names are different phones.
+- Hand the matches to `true-price` to price every pack size; the cheapest option
+  can be on a different listing from the same seller.
+- Card text `Free shipping over US $12` marks Choice consolidation even when the
+  Choice switch was not set.
+
+Card extraction fallback (worked 2026-11-23 when the card class query was not needed):
+take each `a[href*="/item/"]`, de-dupe by the numeric id, and read
+`a.textContent`. Return **ids, not hrefs**: a `javascript_tool` result containing
+a query-string URL is blocked (`reference/browser.md`).
+
 ## Output format
 
 ```
