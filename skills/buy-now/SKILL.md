@@ -85,7 +85,7 @@ that is not authorization to spend. Ask.
 7. **Re-read the total immediately before the click**, and on the single-item path
    assert the confirm URL still carries the presented `skuId` and `quantity` (both are
    query parameters of `/p/trade/confirm.html`). Do the re-read, the assertion and the
-   click in one `javascript_tool` call so nothing can change in between. If it differs from what was
+   click in one `javascript_tool` call so nothing can change in between. If the total, SKU or quantity differs from what was
    presented, the approval is void: report the change and restart at Stage 1 with the
    new figures.
 8. Click the final CTA — **labelled `Pay now`, not "Place order"** (the page's own
