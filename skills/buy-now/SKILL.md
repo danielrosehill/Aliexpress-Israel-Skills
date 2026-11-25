@@ -102,6 +102,9 @@ that is not authorization to spend. Ask.
 
    **Click once.**
 9. Read the outcome and report it (below). Handle what follows the click:
+   - **Anti-bot check blocking createorder** (2026-11-25, "Request timed out" with a `punish`
+     iframe): check the orders list, close the checkout tab, and hand over with `prepare-cart`
+     so the user orders in the mobile app.
    - **Slider CAPTCHA after "Pay now"** (observed 2026-11-19): it is the user's to clear.
      Hand back and wait. Never retry the click.
    - **Order exists from the first Pay now**, even if payment stalls. To retry payment
