@@ -16,7 +16,8 @@ resolved numbers instead.
 - `queries`: one or more (e.g. `8BitDo SN30 Pro`, `8BitDo Lite 2`).
 - `target`: what must be bought, in words, plus hard requirements
   (`SN30 Pro, Bluetooth, controller only, 1 unit`).
-- `choice` (default **false**): Choice-only search. Off by default because **Choice
+- `choice` (default **prefer**): `prefer` searches Choice first, then everything (see
+  "Prefer Choice"); `true` is Choice-only; `false` ignores it. Not Choice-only by default because **Choice
   and fast delivery are independent**. Non-Choice listings sometimes carry the
   same ~9-day Fast-delivery lane to Israel, and a Choice-only search hides them.
   Choice is reported per result either way.
@@ -47,9 +48,23 @@ resolved numbers instead.
 6. **Verdict** per listing: `pass` | `slow` | `anchored` (true price far above card
    and above the best pass) | `off-target` (SKUs show it isn't the target after
    all) | `needs-human` | `unavailable`.
-7. **Rank** passes by true price, then delivery `days_max`, then rating × review
+7. **Rank** Choice passes first (rule below), then by true price, then delivery `days_max`, then rating × review
    count. Write a one-sentence bottom line with the pick and the runner-up.
 8. **Export:** `export-findings` into the working repo's `findings/`.
+
+## Prefer Choice, especially for more than one item
+
+Choice lines bought together are usually combined into one shipment, normally the
+quickest delivery, with one free-shipping threshold. So:
+
+- Buying two or more items: find a Choice listing for **each** and rank an all-Choice
+  basket first, even if it costs slightly more. Run the Choice-only search first, then
+  the open search, and show the saving given up.
+- One item: prefer Choice when price is close and delivery is no slower.
+- Leave Choice only when no acceptable listing exists or the premium is large. Say which.
+- **Verify, don't infer:** confirm at `open-checkout` that the lines sit in one shipment
+  group with one delivery window. Choice alone does not prove either.
+- Combined lines are likely assessed together against the $75 line.
 
 ## Output
 
