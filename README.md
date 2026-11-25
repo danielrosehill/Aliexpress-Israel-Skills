@@ -105,6 +105,8 @@ Finding the thing in the first place: `search-aliexpress`, `search-by-synonyms`,
   the shipping lane actually selected, coupons that only apply at checkout, and
   whether AliExpress collects Israeli VAT there. Reconciles against the estimate and
   **stops** — nothing is ordered.
+- `prepare-cart` — build a clean, verified cart and hand over: you order in the mobile app
+  or on another device. Never clicks Pay now; the fallback when an anti-bot check blocks it.
 - `buy-now` — place one real order with a human in the loop: a one-line terms summary
   (item, SKU, seller, total with shipping, card, delivery window, VAT position) asked
   as a menu (**Place order** / **Look for other options** / **Cancel**), with the full
